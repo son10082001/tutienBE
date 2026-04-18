@@ -1,0 +1,25 @@
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express from "express";
+import { errorHandler } from "./middlewares/error.middleware.js";
+import { adminRouter } from "./modules/admin/admin.routes.js";
+import { authRouter } from "./modules/auth/auth.routes.js";
+import { userRouter } from "./modules/user/user.routes.js";
+
+const app = express();
+
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
+
+app.get("/health", (_req, res) => {
+  return res.status(200).json({ message: "OK" });
+});
+
+app.use("/api/auth", authRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/user", userRouter);
+
+app.use(errorHandler);
+
+export { app };
