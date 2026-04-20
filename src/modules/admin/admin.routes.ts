@@ -12,7 +12,12 @@ import {
   patchDepositPromotionAdminController,
 } from "../deposit/deposit-promotion.controller.js";
 import { deleteUserAdminController, listUsersAdminController } from "../user/user.controller.js";
-import { createGiftCodeController } from "../gift-code/gift-code.controller.js";
+import {
+  createGiftCodeController,
+  getGiftCodeBatchCodesController,
+  getGiftCodeItemsController,
+  listGiftCodeBatchesController,
+} from "../gift-code/gift-code.controller.js";
 
 const adminRouter = Router();
 
@@ -66,6 +71,18 @@ adminRouter.patch("/deposit-promotions/:id", authenticate, authorize("ADMIN"), (
 
 adminRouter.post("/gift-codes", authenticate, authorize("ADMIN"), (req, res, next) => {
   createGiftCodeController(req, res).catch(next);
+});
+
+adminRouter.get("/gift-codes/items", authenticate, authorize("ADMIN"), (req, res, next) => {
+  getGiftCodeItemsController(req, res).catch(next);
+});
+
+adminRouter.get("/gift-codes", authenticate, authorize("ADMIN"), (req, res, next) => {
+  listGiftCodeBatchesController(req, res).catch(next);
+});
+
+adminRouter.get("/gift-codes/:id/codes", authenticate, authorize("ADMIN"), (req, res, next) => {
+  getGiftCodeBatchCodesController(req, res).catch(next);
 });
 
 export { adminRouter };

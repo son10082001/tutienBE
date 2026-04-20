@@ -214,3 +214,32 @@ export const redeemGiftCodeService = async (params: RedeemGiftCodeParams) => {
 
   return { message: "Nhận quà thành công! Vui lòng kiểm tra hộp thư trong game." };
 };
+
+export const getGiftCodeItemsService = async () => {
+  const base = env.TICKET_MAIL_API_BASE_URL.replace(/\/$/, "");
+  const url = `${base}/api/items`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error fetching gift code items:", error);
+    throw new Error("Không thể lấy danh sách vật phẩm từ máy chủ.");
+  }
+};
+
+export const listGiftCodeBatchesService = async () => {
+  return prisma.activationcodeinfo.findMany({
+    orderBy: { id: "desc" },
+  });
+};
+
+export const getGiftCodeBatchCodesService = async (batchId: number) => {
+  const codes = await prisma.activationcode.findMany({
+    where: { batch: batchId },
+    select: { code: true },
+  });
+  return codes.map((c: { code: string }) => c.code);
+};
