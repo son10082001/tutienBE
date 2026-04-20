@@ -114,3 +114,39 @@ model TicketConversion {
   @@map("ticket_conversion")
 }
 
+model ShopItem {
+  id              String   @id @default(uuid()) @db.VarChar(36)
+  externalItemId  Int      @map("external_item_id")
+  itemName        String   @map("item_name") @db.VarChar(128)
+  itemQuantity    Int      @map("item_quantity")
+  price           Int
+  imageUrl        String?  @map("image_url") @db.VarChar(512)
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive], map: "ind_shop_item_active")
+  @@map("shop_item")
+}
+
+model ShopOrder {
+  id                String   @id @default(uuid()) @db.VarChar(36)
+  userId            String   @map("user_id") @db.Char(128)
+  shopItemId        String   @map("shop_item_id") @db.VarChar(36)
+  externalItemId    Int      @map("external_item_id")
+  itemName          String   @map("item_name") @db.VarChar(128)
+  unitItemQuantity  Int      @map("unit_item_quantity")
+  buyQuantity       Int      @map("buy_quantity")
+  totalItemQuantity Int      @map("total_item_quantity")
+  unitPrice         Int      @map("unit_price")
+  totalPrice        Int      @map("total_price")
+  serverId          Int      @map("server_id")
+  playerUid         String   @map("player_uid") @db.Char(24)
+  playerName        String   @map("player_name") @db.VarChar(32)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([userId], map: "ind_shop_order_user")
+  @@index([shopItemId], map: "ind_shop_order_item")
+  @@map("shop_order")
+}
+
