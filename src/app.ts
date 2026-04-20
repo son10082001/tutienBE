@@ -4,6 +4,7 @@ import express from "express";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { adminRouter } from "./modules/admin/admin.routes.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
+import { depositRouter } from "./modules/deposit/deposit.routes.js";
 import { userRouter } from "./modules/user/user.routes.js";
 
 const app = express();
@@ -19,6 +20,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/user", userRouter);
+app.use("/api/deposit", depositRouter);
 
 app.use(errorHandler);
 

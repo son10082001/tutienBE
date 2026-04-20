@@ -1,42 +1,11 @@
-generator client {
+generator gameClient {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/game-client"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
-}
-
-model User {
-  userId            String   @id @db.Char(128)
-  password          String   @default("123456") @db.Char(128)
-  loginTime         DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
-  createTime        DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
-  outTime           DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
-  ip                String   @default("") @db.Char(24)
-  loginCount        Int      @default(0)
-  platform          Int      @default(0)
-  isWhite           Int      @default(0) @db.TinyInt
-  serverId          Int
-  name              String   @db.VarChar(24)
-  email             String?  @db.VarChar(255)
-  phone             String?  @db.VarChar(32)
-  type              Int      @default(0) @db.TinyInt
-  serverIp          String   @default("") @db.Char(24)
-  serverAdminPort   String   @default("") @db.Char(24)
-  loginDays         Int      @default(0)
-  onlineMin         Int      @default(0)
-  maxStage          Int      @default(0)
-  pumpCount         Int      @default(0)
-  extUserData       String?  @db.LongText
-  lastLoginServerId Int
-
-  @@index([userId], map: "ind_e_id")
-  @@index([name], map: "ind_e_name")
-  @@index([outTime], map: "ind_e_outTime")
-  @@index([platform], map: "ind_e_platform")
-  @@index([serverId], map: "ind_e_serverid")
-  @@map("user")
+  url      = env("DATABASE_GAME_URL")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -132,47 +101,4 @@ model useactivationcoderecord {
   @@index([batch], map: "ind_uacr_batch")
   @@index([code], map: "ind_uacr_code")
   @@index([playerId], map: "ind_uacr_playerId")
-}
-
-model DepositPromotion {
-  id        String   @id @default(uuid()) @db.VarChar(36)
-  percent   Int
-  startAt   DateTime @map("start_at") @db.DateTime(0)
-  endAt     DateTime @map("end_at") @db.DateTime(0)
-  isActive  Boolean  @default(true) @map("is_active")
-  label     String?  @db.VarChar(128)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("deposit_promotion")
-}
-
-model DepositRequest {
-  id                   String   @id @default(uuid()) @db.VarChar(36)
-  userId               String   @map("user_id") @db.Char(128)
-  amount               Int
-  bonusAmount          Int      @default(0) @map("bonus_amount")
-  promoPercentSnapshot Int?     @map("promo_percent_snapshot")
-  method               String   @db.VarChar(16)
-  note                 String   @db.VarChar(256)
-  server               String   @db.VarChar(16)
-  status               String   @default("pending") @db.VarChar(16)
-  adminNote            String?  @map("admin_note") @db.VarChar(512)
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @updatedAt @map("updated_at")
-
-  @@index([userId], map: "ind_dr_user")
-  @@index([status], map: "ind_dr_status")
-  @@map("deposit_request")
-}
-
-/// Phiên JWT access portal (web + game): logout / login mới thu hồi hết session cùng user.
-model PortalAccessSession {
-  jti       String    @id @db.VarChar(64)
-  userId    String    @map("user_id") @db.Char(128)
-  expiresAt DateTime @map("expires_at") @db.DateTime(0)
-  revokedAt DateTime? @map("revoked_at") @db.DateTime(0)
-
-  @@index([userId], map: "ind_portal_sess_user")
-  @@map("portal_access_session")
 }

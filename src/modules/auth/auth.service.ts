@@ -8,6 +8,7 @@ import {
   revokeAllPortalAccessSessionsForUser,
 } from "./portal-access-session.service.js";
 import { LoginInput, RegisterInput } from "./auth.schema.js";
+import { computeVipInfo } from "../user/vip.js";
 
 function resolveRoleByType(type: number): "ADMIN" | "USER" {
   return type === 1 ? "ADMIN" : "USER";
@@ -26,13 +27,13 @@ export async function loginService(input: LoginInput) {
   const user = await prisma.user.findUnique({ where: { userId: input.userId } });
 
   if (!user) {
-    throw new Error("userId or password is incorrect");
+    throw new Error("Tên đăng nhập hoặc mật khẩu không đúng");
   }
 
   const isPasswordMatched = user.password === input.password;
 
   if (!isPasswordMatched) {
-    throw new Error("userId or password is incorrect");
+    throw new Error("Tên đăng nhập hoặc mật khẩu không đúng");
   }
 
   const role = resolveRoleByType(user.type);
@@ -73,7 +74,7 @@ export async function refreshAccessTokenService(refreshToken: string) {
 
   const user = await prisma.user.findUnique({ where: { userId: payload.sub } });
   if (!user) {
-    throw new Error("Invalid refresh token");
+    throw new Error("Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại");
   }
 
   const role = resolveRoleByType(user.type);
@@ -91,33 +92,50 @@ export async function refreshAccessTokenService(refreshToken: string) {
 }
 
 export async function registerService(input: RegisterInput) {
-  const userId = input.email.trim().toLowerCase();
+  const userId = input.userId.trim();
 
   const existingUser = await prisma.user.findUnique({ where: { userId } });
   if (existingUser) {
-    throw new Error("user already exists");
+    throw new Error("Tài khoản đã tồn tại");
   }
+
+  const name = userId.length <= 24 ? userId : userId.slice(0, 24);
 
   await prisma.$executeRaw`
     INSERT INTO user (userId, password, name, type, serverId, lastLoginServerId)
-    VALUES (${userId}, ${input.password}, ${input.name}, 0, 0, 0)
+    VALUES (${userId}, ${input.password}, ${name}, 0, 0, 0)
   `;
 }
 
 export async function meService(userId: string) {
   const user = await prisma.user.findUnique({ where: { userId } });
   if (!user) {
-    throw new Error("User not found");
+    throw new Error("Không tìm thấy tài khoản");
   }
 
   const role = resolveRoleByType(user.type);
+
+  // Tính tổng tiền đã nạp thành công (status = approved)
+  const approvedDeposits = await prisma.depositRequest.findMany({
+    where: { userId, status: "approved" },
+    select: { amount: true, bonusAmount: true },
+  });
+  const balance = approvedDeposits.reduce((sum, d) => sum + d.amount + d.bonusAmount, 0);
+  const vip = computeVipInfo(balance);
 
   return {
     id: user.userId,
     userId: user.userId,
     name: user.name,
+    email: user.email ?? null,
+    phone: user.phone ?? null,
     type: user.type,
     role,
+    balance,
+    vipLevel: vip.vipLevel,
+    vipLabel: vip.vipLabel,
+    nextVipLevel: vip.nextVipLevel,
+    amountToNextVip: vip.amountToNextVip,
   };
 }
 

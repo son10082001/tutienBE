@@ -3,12 +3,12 @@ import { ZodError } from "zod";
 
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
   if (err instanceof ZodError) {
-    return res.status(400).json({ message: "Validation error", errors: err.flatten() });
+    return res.status(400).json({ message: "Dữ liệu không hợp lệ", errors: err.flatten() });
   }
 
   if (err instanceof Error) {
     return res.status(500).json({ message: err.message });
   }
 
-  return res.status(500).json({ message: "Unknown server error" });
+  return res.status(500).json({ message: "Lỗi máy chủ không xác định" });
 }

@@ -6,8 +6,7 @@ export const loginSchema = z.object({
 });
 
 export const registerSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
+  userId: z.string().trim().min(1).max(128),
   password: z.string().min(1),
   referredBy: z.string().optional(),
 });

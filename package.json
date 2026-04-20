@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "prebuild": "prisma generate --schema prisma/schema-login.prisma && prisma generate --schema prisma/schema-game.prisma",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "prisma:generate": "prisma generate",
+    "postinstall": "prisma generate --schema prisma/schema-login.prisma && prisma generate --schema prisma/schema-game.prisma",
+    "prisma:generate": "prisma generate --schema prisma/schema-login.prisma && prisma generate --schema prisma/schema-game.prisma",
+    "migrate:login": "node scripts/migrate-login.mjs",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts"
   },

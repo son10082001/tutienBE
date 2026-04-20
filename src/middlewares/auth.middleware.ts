@@ -23,7 +23,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      res.status(401).json({ message: "Missing or invalid access token" });
+      res.status(401).json({ message: "Thiếu hoặc sai định dạng access token" });
       return;
     }
 
@@ -32,12 +32,12 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     try {
       const payload = verifyAccessToken(token);
       if (!payload.jti) {
-        res.status(401).json({ message: "Invalid token" });
+        res.status(401).json({ message: "Token không hợp lệ" });
         return;
       }
       const active = await isPortalAccessSessionActive(payload.jti, payload.sub);
       if (!active) {
-        res.status(401).json({ message: "Session ended" });
+        res.status(401).json({ message: "Phiên đăng nhập đã kết thúc" });
         return;
       }
 
@@ -49,7 +49,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
 
       next();
     } catch {
-      res.status(401).json({ message: "Token expired or invalid" });
+      res.status(401).json({ message: "Token hết hạn hoặc không hợp lệ" });
     }
   })().catch(next);
 }
@@ -57,11 +57,11 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
 export function authorize(...roles: Role[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Chưa đăng nhập" });
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Forbidden" });
+      return res.status(403).json({ message: "Bạn không có quyền thực hiện thao tác này" });
     }
 
     return next();
