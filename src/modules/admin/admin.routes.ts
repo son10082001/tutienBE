@@ -1,25 +1,49 @@
 import { Router } from "express";
+import multer from "multer";
+import fs from "node:fs";
+import path from "node:path";
 import { authenticate, authorize } from "../../middlewares/auth.middleware.js";
-import {
-  getAllDepositsController,
-  approveDepositController,
-  rejectDepositController,
-  updateDepositAdminController,
-} from "../deposit/deposit.controller.js";
 import {
   createDepositPromotionAdminController,
   listDepositPromotionsAdminController,
   patchDepositPromotionAdminController,
 } from "../deposit/deposit-promotion.controller.js";
-import { deleteUserAdminController, listUsersAdminController } from "../user/user.controller.js";
 import {
   createGiftCodeController,
   getGiftCodeBatchCodesController,
   getGiftCodeItemsController,
   listGiftCodeBatchesController,
 } from "../gift-code/gift-code.controller.js";
+import {
+  approveDepositController,
+  getAllDepositsController,
+  rejectDepositController,
+  updateDepositAdminController,
+} from "../deposit/deposit.controller.js";
+import {
+  createShopItemController,
+  deleteShopItemController,
+  listExternalItemsController,
+  listShopItemsAdminController,
+  updateShopItemController,
+  uploadShopImageController,
+} from "../shop/shop.controller.js";
+import { deleteUserAdminController, listUsersAdminController } from "../user/user.controller.js";
 
 const adminRouter = Router();
+const shopUploadDir = path.join(process.cwd(), "uploads", "shop");
+const shopUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      fs.mkdirSync(shopUploadDir, { recursive: true });
+      cb(null, shopUploadDir);
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname) || ".png";
+      cb(null, `${Date.now()}-${Math.random().toString(16).slice(2)}${ext}`);
+    },
+  }),
+});
 
 adminRouter.get("/dashboard", authenticate, authorize("ADMIN"), (req, res) => {
   return res.status(200).json({ message: "Chào mừng đến bảng quản trị", user: req.user });
@@ -65,6 +89,38 @@ adminRouter.post("/deposit-promotions", authenticate, authorize("ADMIN"), (req, 
 
 adminRouter.patch("/deposit-promotions/:id", authenticate, authorize("ADMIN"), (req, res, next) => {
   patchDepositPromotionAdminController(req, res).catch(next);
+});
+
+// ─── Shop management ──────────────────────────────────────────────────────────
+
+adminRouter.get("/shop/items", authenticate, authorize("ADMIN"), (req, res, next) => {
+  listShopItemsAdminController(req, res).catch(next);
+});
+
+adminRouter.get("/shop/external-items", authenticate, authorize("ADMIN"), (req, res, next) => {
+  listExternalItemsController(req, res).catch(next);
+});
+
+adminRouter.post(
+  "/shop/upload-image",
+  authenticate,
+  authorize("ADMIN"),
+  shopUpload.single("image"),
+  (req, res, next) => {
+    uploadShopImageController(req, res).catch(next);
+  },
+);
+
+adminRouter.post("/shop/items", authenticate, authorize("ADMIN"), (req, res, next) => {
+  createShopItemController(req, res).catch(next);
+});
+
+adminRouter.patch("/shop/items/:id", authenticate, authorize("ADMIN"), (req, res, next) => {
+  updateShopItemController(req, res).catch(next);
+});
+
+adminRouter.delete("/shop/items/:id", authenticate, authorize("ADMIN"), (req, res, next) => {
+  deleteShopItemController(req, res).catch(next);
 });
 
 // ─── Gift Code management ──────────────────────────────────────────────────────

@@ -181,8 +181,24 @@ export async function getAvailableBalance(userId: string): Promise<number> {
       }
     }
   }
+  let spentByShop = 0;
+  const shopOrderModel = (prisma as any).shopOrder as { aggregate: (...args: any[]) => Promise<any> } | undefined;
+  if (shopOrderModel) {
+    try {
+      const agg = await shopOrderModel.aggregate({
+        where: { userId },
+        _sum: { totalPrice: true },
+      });
+      spentByShop = agg?._sum?.totalPrice ?? 0;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!message.includes("shop_order")) {
+        throw error;
+      }
+    }
+  }
 
-  return Math.max(0, approvedTotal - convertedAmount);
+  return Math.max(0, approvedTotal - convertedAmount - spentByShop);
 }
 
 export async function convertBalanceToTickets(userId: string, input: CreateTicketConversionInput) {
