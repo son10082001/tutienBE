@@ -12,6 +12,7 @@ import {
   patchDepositPromotionAdminController,
 } from "../deposit/deposit-promotion.controller.js";
 import { deleteUserAdminController, listUsersAdminController } from "../user/user.controller.js";
+import { createGiftCodeController } from "../gift-code/gift-code.controller.js";
 
 const adminRouter = Router();
 
@@ -59,6 +60,12 @@ adminRouter.post("/deposit-promotions", authenticate, authorize("ADMIN"), (req, 
 
 adminRouter.patch("/deposit-promotions/:id", authenticate, authorize("ADMIN"), (req, res, next) => {
   patchDepositPromotionAdminController(req, res).catch(next);
+});
+
+// ─── Gift Code management ──────────────────────────────────────────────────────
+
+adminRouter.post("/gift-codes", authenticate, authorize("ADMIN"), (req, res, next) => {
+  createGiftCodeController(req, res).catch(next);
 });
 
 export { adminRouter };
