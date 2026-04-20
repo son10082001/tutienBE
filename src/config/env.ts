@@ -11,6 +11,10 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(16),
   ACCESS_TOKEN_EXPIRES_IN: z.string().default("15m"),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default("7d"),
+  TICKET_EXCHANGE_RATE: z.coerce.number().int().min(1).default(1),
+  TICKET_MAIL_API_BASE_URL: z.string().default("http://103.149.252.173:5000"),
+  TICKET_MAIL_VERIFY_CODE: z.string().default("123123"),
+  TICKET_MAIL_ITEM_ID: z.coerce.number().int().min(1).default(6),
   ADMIN_USER_IDS: z.string().default(""),
   ADMIN_TYPES: z.string().default("1"),
 });

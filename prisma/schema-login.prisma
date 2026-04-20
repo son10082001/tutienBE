@@ -81,3 +81,36 @@ model DepositRequest {
   @@index([status], map: "ind_dr_status")
   @@map("deposit_request")
 }
+
+model TicketExchange {
+  id              String   @id @default(uuid()) @db.VarChar(36)
+  userId          String   @map("user_id") @db.Char(128)
+  serverId        Int      @map("server_id")
+  playerUid       String   @map("player_uid") @db.Char(24)
+  playerName      String   @map("player_name") @db.VarChar(32)
+  tickets         Int
+  conversionRate  Int      @map("conversion_rate")
+  gameCurrencyAdd Int      @map("game_currency_add")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([userId], map: "ind_te_user")
+  @@index([serverId], map: "ind_te_server")
+  @@map("ticket_exchange")
+}
+
+model TicketConversion {
+  id             String   @id @default(uuid()) @db.VarChar(36)
+  userId         String   @map("user_id") @db.Char(128)
+  serverId       Int      @map("server_id")
+  playerUid      String   @map("player_uid") @db.Char(24)
+  playerName     String   @map("player_name") @db.VarChar(32)
+  amount         Int
+  tickets        Int
+  conversionRate Int      @map("conversion_rate")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([userId], map: "ind_tc_user")
+  @@index([serverId], map: "ind_tc_server")
+  @@map("ticket_conversion")
+}
+

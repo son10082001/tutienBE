@@ -46,6 +46,14 @@ export async function getMyDeposits(userId: string, page = 1, limit = 20) {
   return { items, total, page, limit };
 }
 
+export async function getApprovedDepositTotalForUser(userId: string): Promise<number> {
+  const rows = await prisma.depositRequest.findMany({
+    where: { userId, status: "approved" },
+    select: { amount: true, bonusAmount: true },
+  });
+  return rows.reduce((sum, row) => sum + row.amount + row.bonusAmount, 0);
+}
+
 export async function getAllDeposits(page = 1, limit = 20, status?: string) {
   const where = status ? { status } : {};
   const skip = (page - 1) * limit;

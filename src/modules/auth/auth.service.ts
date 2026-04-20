@@ -9,6 +9,10 @@ import {
 } from "./portal-access-session.service.js";
 import { LoginInput, RegisterInput } from "./auth.schema.js";
 import { computeVipInfo } from "../user/vip.js";
+import {
+  getAvailableBalance,
+  getTicketBalance,
+} from "../ticket-exchange/ticket-exchange.service.js";
 
 function resolveRoleByType(type: number): "ADMIN" | "USER" {
   return type === 1 ? "ADMIN" : "USER";
@@ -120,8 +124,12 @@ export async function meService(userId: string) {
     where: { userId, status: "approved" },
     select: { amount: true, bonusAmount: true },
   });
-  const balance = approvedDeposits.reduce((sum, d) => sum + d.amount + d.bonusAmount, 0);
-  const vip = computeVipInfo(balance);
+  const approvedTotal = approvedDeposits.reduce((sum, d) => sum + d.amount + d.bonusAmount, 0);
+  const [vip, ticketBalance, balance] = await Promise.all([
+    Promise.resolve(computeVipInfo(approvedTotal)),
+    getTicketBalance(userId),
+    getAvailableBalance(userId),
+  ]);
 
   return {
     id: user.userId,
@@ -132,6 +140,7 @@ export async function meService(userId: string) {
     type: user.type,
     role,
     balance,
+    ticketBalance,
     vipLevel: vip.vipLevel,
     vipLabel: vip.vipLabel,
     nextVipLevel: vip.nextVipLevel,
