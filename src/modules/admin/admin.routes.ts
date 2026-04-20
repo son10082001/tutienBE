@@ -1,26 +1,27 @@
 import { Router } from "express";
+import multer from "multer";
 import fs from "node:fs";
 import path from "node:path";
 import { authenticate, authorize } from "../../middlewares/auth.middleware.js";
-import multer from "multer";
-import {
-  getAllDepositsController,
-  approveDepositController,
-  rejectDepositController,
-  updateDepositAdminController,
-} from "../deposit/deposit.controller.js";
 import {
   createDepositPromotionAdminController,
   listDepositPromotionsAdminController,
   patchDepositPromotionAdminController,
 } from "../deposit/deposit-promotion.controller.js";
 import {
+  approveDepositController,
+  getAllDepositsController,
+  rejectDepositController,
+  updateDepositAdminController,
+} from "../deposit/deposit.controller.js";
+import { createGiftCodeController } from "../gift-code/gift-code.controller.js";
+import {
   createShopItemController,
   deleteShopItemController,
   listExternalItemsController,
   listShopItemsAdminController,
-  uploadShopImageController,
   updateShopItemController,
+  uploadShopImageController,
 } from "../shop/shop.controller.js";
 import { deleteUserAdminController, listUsersAdminController } from "../user/user.controller.js";
 
@@ -115,6 +116,12 @@ adminRouter.patch("/shop/items/:id", authenticate, authorize("ADMIN"), (req, res
 
 adminRouter.delete("/shop/items/:id", authenticate, authorize("ADMIN"), (req, res, next) => {
   deleteShopItemController(req, res).catch(next);
+});
+
+// ─── Gift Code management ──────────────────────────────────────────────────────
+
+adminRouter.post("/gift-codes", authenticate, authorize("ADMIN"), (req, res, next) => {
+  createGiftCodeController(req, res).catch(next);
 });
 
 export { adminRouter };

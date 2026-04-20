@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate, authorize } from "../../middlewares/auth.middleware.js";
 import { updateProfileController } from "./user.controller.js";
+import { redeemGiftCodeController } from "../gift-code/gift-code.controller.js";
 
 const userRouter = Router();
 
@@ -13,6 +14,10 @@ userRouter.get("/profile", authenticate, authorize("USER", "ADMIN"), (req, res) 
 
 userRouter.patch("/profile", authenticate, authorize("USER", "ADMIN"), (req, res, next) => {
   updateProfileController(req, res).catch(next);
+});
+
+userRouter.post("/gift-codes/redeem", authenticate, authorize("USER", "ADMIN"), (req, res, next) => {
+  redeemGiftCodeController(req, res).catch(next);
 });
 
 export { userRouter };

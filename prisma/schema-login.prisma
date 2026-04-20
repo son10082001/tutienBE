@@ -9,28 +9,28 @@ datasource db {
 }
 
 model User {
-  userId          String   @id @db.Char(128)
-  password        String   @default("123456") @db.Char(128)
-  loginTime       DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
-  createTime      DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
-  outTime         DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
-  ip              String   @default("") @db.Char(24)
-  loginCount      Int      @default(0)
-  platform        Int      @default(0)
-  isWhite         Int      @default(0) @db.TinyInt
-  serverId        Int
-  name            String   @db.VarChar(24)
-  email           String?  @db.VarChar(255)
-  phone           String?  @db.VarChar(32)
-  type            Int      @default(0) @db.TinyInt
-  serverIp        String   @default("") @db.Char(24)
-  serverAdminPort String   @default("") @db.Char(24)
-  loginDays       Int      @default(0)
-  onlineMin       Int      @default(0)
-  maxStage        Int      @default(0)
-  pumpCount       Int      @default(0)
-  extUserData     String?  @db.LongText
+  userId            String   @id @db.Char(128)
+  password          String   @default("123456") @db.Char(128)
+  loginTime         DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
+  createTime        DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
+  outTime           DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
+  ip                String   @default("") @db.Char(24)
+  loginCount        Int      @default(0)
+  platform          Int      @default(0)
+  isWhite           Int      @default(0) @db.TinyInt
+  serverId          Int
+  name              String   @db.VarChar(24)
+  type              Int      @default(0) @db.TinyInt
+  serverIp          String   @default("") @db.Char(24)
+  serverAdminPort   String   @default("") @db.Char(24)
+  loginDays         Int      @default(0)
+  onlineMin         Int      @default(0)
+  maxStage          Int      @default(0)
+  pumpCount         Int      @default(0)
+  extUserData       String?  @db.LongText
   lastLoginServerId Int
+  email             String?  @db.VarChar(255)
+  phone             String?  @db.VarChar(32)
 
   @@index([userId], map: "ind_e_id")
   @@index([name], map: "ind_e_name")
@@ -57,8 +57,8 @@ model DepositPromotion {
   endAt     DateTime @map("end_at") @db.DateTime(0)
   isActive  Boolean  @default(true) @map("is_active")
   label     String?  @db.VarChar(128)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
   @@map("deposit_promotion")
 }
@@ -67,8 +67,6 @@ model DepositRequest {
   id                   String   @id @default(uuid()) @db.VarChar(36)
   userId               String   @map("user_id") @db.Char(128)
   amount               Int
-  bonusAmount          Int      @default(0) @map("bonus_amount")
-  promoPercentSnapshot Int?     @map("promo_percent_snapshot")
   method               String   @db.VarChar(16)
   note                 String   @db.VarChar(256)
   server               String   @db.VarChar(16)
@@ -76,38 +74,24 @@ model DepositRequest {
   adminNote            String?  @map("admin_note") @db.VarChar(512)
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
+  bonusAmount          Int      @default(0) @map("bonus_amount")
+  promoPercentSnapshot Int?     @map("promo_percent_snapshot")
 
   @@index([userId], map: "ind_dr_user")
   @@index([status], map: "ind_dr_status")
   @@map("deposit_request")
 }
 
-model TicketExchange {
-  id              String   @id @default(uuid()) @db.VarChar(36)
-  userId          String   @map("user_id") @db.Char(128)
-  serverId        Int      @map("server_id")
-  playerUid       String   @map("player_uid") @db.Char(24)
-  playerName      String   @map("player_name") @db.VarChar(32)
-  tickets         Int
-  conversionRate  Int      @map("conversion_rate")
-  gameCurrencyAdd Int      @map("game_currency_add")
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  @@index([userId], map: "ind_te_user")
-  @@index([serverId], map: "ind_te_server")
-  @@map("ticket_exchange")
-}
-
 model TicketConversion {
   id             String   @id @default(uuid()) @db.VarChar(36)
   userId         String   @map("user_id") @db.Char(128)
-  serverId       Int      @map("server_id")
-  playerUid      String   @map("player_uid") @db.Char(24)
-  playerName     String   @map("player_name") @db.VarChar(32)
   amount         Int
   tickets        Int
   conversionRate Int      @map("conversion_rate")
   createdAt      DateTime @default(now()) @map("created_at")
+  serverId       Int      @default(0) @map("server_id")
+  playerUid      String   @default("") @map("player_uid") @db.Char(24)
+  playerName     String   @default("") @map("player_name") @db.VarChar(32)
 
   @@index([userId], map: "ind_tc_user")
   @@index([serverId], map: "ind_tc_server")
@@ -150,3 +134,131 @@ model ShopOrder {
   @@map("shop_order")
 }
 
+model activationcode {
+  id    String @id @db.Char(12)
+  batch Int
+  code  String @db.Char(15)
+
+  @@index([id], map: "ind_ac_id")
+  @@map("activationcode")
+}
+
+model activationcodeinfo {
+  id         Int      @id
+  name       String   @db.VarChar(32)
+  channel    String   @db.VarChar(64)
+  vipLevel   Int      @default(0)
+  bonusesStr String   @db.VarChar(512)
+  expiryDate DateTime @default(dbgenerated("'2012-01-01 00:00:00'")) @db.DateTime(0)
+  useType    String   @default("0") @db.Char(4)
+  addFlag    Int      @default(0)
+
+  @@index([id], map: "ind_aci_id")
+  @@map("activationcodeinfo")
+}
+
+model useactivationcoderecord {
+  id         Int      @id
+  playerId   String   @db.Char(24)
+  batch      Int
+  code       String   @db.Char(15)
+  createTime DateTime @default(dbgenerated("'2012-01-01 00:00:00'")) @db.DateTime(0)
+
+  @@index([batch], map: "ind_uacr_batch")
+  @@index([code], map: "ind_uacr_code")
+  @@index([playerId], map: "ind_uacr_playerId")
+  @@map("useactivationcoderecord")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model announcement {
+  platform     Int      @id
+  announcement String   @db.LongText
+  time         DateTime @default(dbgenerated("'2019-01-01 00:00:00'")) @db.DateTime(0)
+
+  @@index([platform], map: "ind_e_platform")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model configserver {
+  id        Int      @id
+  name      String   @db.VarChar(48)
+  mergeId   Int
+  status    Int      @db.TinyInt
+  desc      String   @db.VarChar(256)
+  isSsl     Int      @db.TinyInt
+  host      String   @db.Char(24)
+  redis     Int
+  debug     Int
+  pay       Int
+  admin     Int
+  websocket Int
+  watchdog  Int
+  deployId  Int
+  state     Int      @db.TinyInt
+  gameDir   String   @db.VarChar(512)
+  inst      String   @db.VarChar(128)
+  dbname    String   @db.VarChar(128)
+  type      String   @db.Char(24)
+  regCount  Int
+  openTime  DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
+  platform  String   @db.VarChar(256)
+  ip        String   @db.VarChar(256)
+
+  @@index([deployId], map: "ind_cs_deployId")
+  @@index([mergeId], map: "ind_cs_mergeId")
+  @@index([name], map: "ind_cs_name")
+  @@index([state], map: "ind_cs_state")
+  @@index([type], map: "ind_cs_type")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model publicconfig {
+  id    Int @id
+  maxID Int
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model serverinfo {
+  id            Int       @id
+  state         Int?
+  nextState     Int?
+  nextStateTime DateTime? @db.DateTime(0)
+  desc          String?   @db.VarChar(255)
+  name          String?   @db.VarChar(255)
+  token         String?   @db.VarChar(255)
+}
+
+model shop_item {
+  id               String   @id @db.VarChar(36)
+  external_item_id Int
+  item_name        String   @db.VarChar(128)
+  item_quantity    Int
+  price            Int
+  image_url        String?  @db.VarChar(512)
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime
+
+  @@index([is_active], map: "ind_shop_item_active")
+}
+
+model shop_order {
+  id                  String   @id @db.VarChar(36)
+  user_id             String   @db.Char(128)
+  shop_item_id        String   @db.VarChar(36)
+  external_item_id    Int
+  item_name           String   @db.VarChar(128)
+  unit_item_quantity  Int
+  buy_quantity        Int
+  total_item_quantity Int
+  unit_price          Int
+  total_price         Int
+  server_id           Int
+  player_uid          String   @db.Char(24)
+  player_name         String   @db.VarChar(32)
+  created_at          DateTime @default(now())
+
+  @@index([shop_item_id], map: "ind_shop_order_item")
+  @@index([user_id], map: "ind_shop_order_user")
+}

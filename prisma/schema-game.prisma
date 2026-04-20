@@ -9,29 +9,6 @@ datasource db {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model activationcode {
-  id    String @id @db.Char(12)
-  batch Int
-  code  String @db.Char(15)
-
-  @@index([id], map: "ind_ac_id")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model activationcodeinfo {
-  id         Int      @id
-  name       String   @db.VarChar(32)
-  channel    String   @db.VarChar(64)
-  vipLevel   Int      @default(0)
-  bonusesStr String   @db.VarChar(512)
-  expiryDate DateTime @default(dbgenerated("'2012-01-01 00:00:00'")) @db.DateTime(0)
-  useType    String   @default("0") @db.Char(4)
-  addFlag    Int      @default(0)
-
-  @@index([id], map: "ind_aci_id")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model announcement {
   platform     Int      @id
   announcement String   @db.LongText
@@ -40,65 +17,3 @@ model announcement {
   @@index([platform], map: "ind_e_platform")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model configserver {
-  id        Int      @id
-  name      String   @db.VarChar(48)
-  mergeId   Int
-  status    Int      @db.TinyInt
-  desc      String   @db.VarChar(256)
-  isSsl     Int      @db.TinyInt
-  host      String   @db.Char(24)
-  redis     Int
-  debug     Int
-  pay       Int
-  admin     Int
-  websocket Int
-  watchdog  Int
-  deployId  Int
-  state     Int      @db.TinyInt
-  gameDir   String   @db.VarChar(512)
-  inst      String   @db.VarChar(128)
-  dbname    String   @db.VarChar(128)
-  type      String   @db.Char(24)
-  regCount  Int
-  openTime  DateTime @default(dbgenerated("'2021-01-01 00:00:00'")) @db.DateTime(0)
-  platform  String   @db.VarChar(256)
-  ip        String   @db.VarChar(256)
-
-  @@index([deployId], map: "ind_cs_deployId")
-  @@index([mergeId], map: "ind_cs_mergeId")
-  @@index([name], map: "ind_cs_name")
-  @@index([state], map: "ind_cs_state")
-  @@index([type], map: "ind_cs_type")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model publicconfig {
-  id    Int @id
-  maxID Int
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model serverinfo {
-  id            Int       @id
-  state         Int?
-  nextState     Int?
-  nextStateTime DateTime? @db.DateTime(0)
-  desc          String?   @db.VarChar(255)
-  name          String?   @db.VarChar(255)
-  token         String?   @db.VarChar(255)
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model useactivationcoderecord {
-  id         Int      @id
-  playerId   String   @db.Char(24)
-  batch      Int
-  code       String   @db.Char(15)
-  createTime DateTime @default(dbgenerated("'2012-01-01 00:00:00'")) @db.DateTime(0)
-
-  @@index([batch], map: "ind_uacr_batch")
-  @@index([code], map: "ind_uacr_code")
-  @@index([playerId], map: "ind_uacr_playerId")
-}
