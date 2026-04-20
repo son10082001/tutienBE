@@ -1,6 +1,6 @@
 generator loginClient {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/login-client"
+  output   = "../src/@generated/login-client"
 }
 
 datasource db {
@@ -99,15 +99,15 @@ model TicketConversion {
 }
 
 model ShopItem {
-  id              String   @id @default(uuid()) @db.VarChar(36)
-  externalItemId  Int      @map("external_item_id")
-  itemName        String   @map("item_name") @db.VarChar(128)
-  itemQuantity    Int      @map("item_quantity")
-  price           Int
-  imageUrl        String?  @map("image_url") @db.VarChar(512)
-  isActive        Boolean  @default(true) @map("is_active")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid()) @db.VarChar(36)
+  externalItemId Int      @map("external_item_id")
+  itemName       String   @map("item_name") @db.VarChar(128)
+  itemQuantity   Int      @map("item_quantity")
+  price          Int
+  imageUrl       String?  @map("image_url") @db.VarChar(512)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([isActive], map: "ind_shop_item_active")
   @@map("shop_item")
@@ -170,7 +170,6 @@ model useactivationcoderecord {
   @@map("useactivationcoderecord")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model announcement {
   platform     Int      @id
   announcement String   @db.LongText
@@ -179,7 +178,6 @@ model announcement {
   @@index([platform], map: "ind_e_platform")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model configserver {
   id        Int      @id
   name      String   @db.VarChar(48)
@@ -212,13 +210,11 @@ model configserver {
   @@index([type], map: "ind_cs_type")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model publicconfig {
   id    Int @id
   maxID Int
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model serverinfo {
   id            Int       @id
   state         Int?
@@ -227,38 +223,4 @@ model serverinfo {
   desc          String?   @db.VarChar(255)
   name          String?   @db.VarChar(255)
   token         String?   @db.VarChar(255)
-}
-
-model shop_item {
-  id               String   @id @db.VarChar(36)
-  external_item_id Int
-  item_name        String   @db.VarChar(128)
-  item_quantity    Int
-  price            Int
-  image_url        String?  @db.VarChar(512)
-  is_active        Boolean  @default(true)
-  created_at       DateTime @default(now())
-  updated_at       DateTime
-
-  @@index([is_active], map: "ind_shop_item_active")
-}
-
-model shop_order {
-  id                  String   @id @db.VarChar(36)
-  user_id             String   @db.Char(128)
-  shop_item_id        String   @db.VarChar(36)
-  external_item_id    Int
-  item_name           String   @db.VarChar(128)
-  unit_item_quantity  Int
-  buy_quantity        Int
-  total_item_quantity Int
-  unit_price          Int
-  total_price         Int
-  server_id           Int
-  player_uid          String   @db.Char(24)
-  player_name         String   @db.VarChar(32)
-  created_at          DateTime @default(now())
-
-  @@index([shop_item_id], map: "ind_shop_order_item")
-  @@index([user_id], map: "ind_shop_order_user")
 }

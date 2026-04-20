@@ -1,4 +1,4 @@
-import { PrismaClient } from "../../node_modules/.prisma/game-client/index.js";
+import { PrismaClient } from "../@generated/game-client";
 
 const base = process.env.DATABASE_URL!;
 

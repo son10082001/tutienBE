@@ -1,6 +1,6 @@
 generator gameClient {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/game-client"
+  output   = "../src/@generated/game-client"
 }
 
 datasource db {
