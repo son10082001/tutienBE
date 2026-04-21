@@ -9,6 +9,8 @@
     "skipLibCheck": true,
     "rootDir": ".",
     "outDir": "dist",
+    "allowJs": true,
+    "checkJs": false,
     "types": ["node"]
   },
   "include": ["src", "prisma/seed.ts"]
