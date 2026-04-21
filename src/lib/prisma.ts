@@ -1,4 +1,4 @@
-import { PrismaClient } from "../@generated/login-client";
+import { PrismaClient } from "../@generated/login-client/index.js";
 
 /** `.../login` trong URL = đã có tên DB, không nối thêm. */
 function mysqlUrlHasDatabasePath(url: string): boolean {
