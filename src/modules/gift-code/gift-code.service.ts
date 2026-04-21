@@ -1,5 +1,6 @@
 import { env } from "../../config/env.js";
 import { prisma } from "../../lib/prisma.js";
+import type { ListGiftCodeBatchesQueryInput, UpdateGiftCodeBatchInput } from "./gift-code.schema.js";
 
 const T_ACTIVATION_CODE = [
   "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
@@ -21,7 +22,11 @@ export interface GiftCodeCreateParams {
 }
 
 export const createGiftCodesService = async (params: GiftCodeCreateParams) => {
-  const { name, channel, generateCount, expiryDate, bonusesStr, vipLevel = 0, useType = "0" } = params;
+  const { name, channel, generateCount, expiryDate, bonusesStr, useType = "0" } = params;
+  const codeName = name.trim().toUpperCase();
+  if (!codeName) {
+    throw new Error("Tên gift code không được để trống");
+  }
 
   // 1. Determine batch ID
   const lastBatch = await prisma.activationcodeinfo.findFirst({
@@ -31,69 +36,50 @@ export const createGiftCodesService = async (params: GiftCodeCreateParams) => {
 
   const batch = (lastBatch?.id || 0) + 1;
   const addFlag = 1; // Default for new batch
+  const existedCode = await prisma.activationcode.findFirst({
+    where: { code: codeName },
+    select: { id: true },
+  });
+  if (existedCode) {
+    throw new Error("Tên gift code đã tồn tại, vui lòng dùng tên khác");
+  }
 
   // 2. Prepare generation tokens
   const startBatchStr = T_ACTIVATION_CODE[Math.floor(batch / COUNT) % COUNT];
   const endBatchStr = T_ACTIVATION_CODE[batch % COUNT];
   const addFlagStr = T_ACTIVATION_CODE[addFlag % COUNT];
 
-  const generateSingleCode = () => {
-    let result = "";
-    for (let i = 0; i < 15; i++) {
-      if (i === 6) { // Lua position 7
-        result += startBatchStr;
-      } else if (i === 8) { // Lua position 9
-        result += endBatchStr;
-      } else if (i === 10) { // Lua position 11
-        result += addFlagStr;
-      } else {
-        const randomIndex = Math.floor(Math.random() * COUNT);
-        result += T_ACTIVATION_CODE[randomIndex];
-      }
-    }
-    return result;
-  };
-
-  const codes: string[] = [];
-  const activationCodeData: any[] = [];
-
-  for (let i = 1; i <= generateCount; i++) {
-    const code = generateSingleCode();
-    codes.push(code);
-
-    // Lua: string.format("%04X%02X%06X", batchEx, addFlag, index)
-    const idEx = 
-      batch.toString(16).toUpperCase().padStart(4, '0') +
-      addFlag.toString(16).toUpperCase().padStart(2, '0') +
-      i.toString(16).toUpperCase().padStart(6, '0');
-
-    activationCodeData.push({
-      id: idEx,
-      batch: batch,
-      code: code,
-    });
-  }
+  // Chỉ tạo 1 mã duy nhất, mã này chính là tên gift code.
+  const idEx =
+    batch.toString(16).toUpperCase().padStart(4, "0") +
+    addFlag.toString(16).toUpperCase().padStart(2, "0") +
+    "000001";
 
   // 3. Insert into database
   await prisma.$transaction([
     prisma.activationcodeinfo.create({
       data: {
         id: batch,
-        name,
+        name: codeName,
         channel,
-        vipLevel,
+        // Dùng cột vipLevel để lưu giới hạn số lượt dùng của mã.
+        vipLevel: generateCount,
         bonusesStr,
         expiryDate: new Date(expiryDate),
         useType,
         addFlag,
       },
     }),
-    prisma.activationcode.createMany({
-      data: activationCodeData,
+    prisma.activationcode.create({
+      data: {
+        id: idEx,
+        batch,
+        code: codeName,
+      },
     }),
   ]);
 
-  return codes;
+  return [codeName];
 };
 
 export interface RedeemGiftCodeParams {
@@ -122,11 +108,12 @@ async function postJson<T>(url: string, payload: unknown): Promise<T> {
 }
 
 export const redeemGiftCodeService = async (params: RedeemGiftCodeParams) => {
-  const { code, roleId } = params;
+  const { code, roleId, serverId } = params;
+  const normalizedCode = code.trim().toUpperCase();
 
   // 1. Tìm gift code
   const ac = await prisma.activationcode.findFirst({
-    where: { code },
+    where: { code: normalizedCode },
   });
 
   if (!ac) {
@@ -147,26 +134,31 @@ export const redeemGiftCodeService = async (params: RedeemGiftCodeParams) => {
     throw new Error("Mã gift code đã hết hạn sử dụng");
   }
 
-  // 4. Kiểm tra giới hạn sử dụng theo useType
-  // 0: Một mã dùng 1 lần duy nhất (ai dùng cũng được nhưng chỉ 1 lần)
-  // 1: Một nhân vật chỉ được dùng 1 mã trong cùng 1 batch
-  if (aci.useType === "0") {
-    const used = await prisma.useactivationcoderecord.findFirst({
-      where: { code },
-    });
-    if (used) {
-      throw new Error("Mã gift code này đã được sử dụng");
-    }
-  } else if (aci.useType === "1") {
-    const used = await prisma.useactivationcoderecord.findFirst({
-      where: { playerId: roleId, batch: ac.batch },
-    });
-    if (used) {
-      throw new Error("Nhân vật của bạn đã nhận quà từ đợt này rồi");
-    }
+  // 4. Kiểm tra kênh server
+  if (aci.channel !== "all" && aci.channel !== String(serverId)) {
+    throw new Error("Mã gift code này không áp dụng cho server đã chọn");
   }
 
-  // 5. Gửi vật phẩm qua API bên ngoài (theo mẫu sendTicketMail)
+  // 5. Giới hạn số lượt dùng của mã (lưu trong vipLevel)
+  const usedByThisRole = await prisma.useactivationcoderecord.findFirst({
+    where: {
+      playerId: roleId,
+      batch: ac.batch,
+    },
+    select: { id: true },
+  });
+  if (usedByThisRole) {
+    throw new Error("Nhân vật này đã nhận gift code này rồi");
+  }
+
+  const usedCount = await prisma.useactivationcoderecord.count({
+    where: { batch: ac.batch },
+  });
+  if (usedCount >= aci.vipLevel) {
+    throw new Error("Mã gift code đã hết lượt sử dụng");
+  }
+
+  // 6. Gửi vật phẩm qua API bên ngoài (theo mẫu sendTicketMail)
   const base = env.TICKET_MAIL_API_BASE_URL.replace(/\/$/, "");
   const verifyUrl = `${base}/api/verify`;
   const sendMailUrl = `${base}/api/send-mail`;
@@ -193,7 +185,7 @@ export const redeemGiftCodeService = async (params: RedeemGiftCodeParams) => {
     throw new Error(send.message || "Gửi phần thưởng thất bại");
   }
 
-  // 6. Ghi nhận lịch sử sử dụng
+  // 7. Ghi nhận lịch sử sử dụng
   // Lấy ID tự tăng tiếp theo (tạm thời increment dựa trên MAX ID nếu cần, 
   // hoặc để tự động nếu schema hỗ trợ, nhưng schema .prisma hnay tôi thấy @id Int)
   const lastRecord = await prisma.useactivationcoderecord.findFirst({
@@ -207,7 +199,7 @@ export const redeemGiftCodeService = async (params: RedeemGiftCodeParams) => {
       id: nextId,
       playerId: roleId,
       batch: ac.batch,
-      code: code,
+      code: normalizedCode,
       createTime: new Date(),
     },
   });
@@ -230,10 +222,52 @@ export const getGiftCodeItemsService = async () => {
   }
 };
 
-export const listGiftCodeBatchesService = async () => {
-  return prisma.activationcodeinfo.findMany({
-    orderBy: { id: "desc" },
-  });
+export const listGiftCodeBatchesService = async (query: ListGiftCodeBatchesQueryInput) => {
+  const where = query.search
+    ? {
+        OR: [
+          { name: { contains: query.search } },
+          { id: Number.isFinite(Number(query.search)) ? Number(query.search) : -1 },
+        ],
+      }
+    : {};
+
+  const skip = (query.page - 1) * query.limit;
+  const [items, total] = await Promise.all([
+    prisma.activationcodeinfo.findMany({
+      where,
+      orderBy: { id: "desc" },
+      skip,
+      take: query.limit,
+    }),
+    prisma.activationcodeinfo.count({ where }),
+  ]);
+
+  const batchIds = items.map((it: { id: number }) => it.id);
+  const usedCounts = batchIds.length
+    ? await prisma.useactivationcoderecord.groupBy({
+        by: ["batch"],
+        where: { batch: { in: batchIds } },
+        _count: { _all: true },
+      })
+    : [];
+  const usedByBatch = new Map<number, number>(
+    usedCounts.map((row: { batch: number; _count: { _all: number } }) => [row.batch, row._count._all]),
+  );
+
+  const itemsWithUsage = items.map((item: { id: number; vipLevel: number }) => ({
+    ...item,
+    usedCount: usedByBatch.get(item.id) ?? 0,
+    totalAllowed: item.vipLevel,
+  }));
+
+  return {
+    items: itemsWithUsage,
+    total,
+    page: query.page,
+    limit: query.limit,
+    totalPages: Math.max(1, Math.ceil(total / query.limit)),
+  };
 };
 
 export const getGiftCodeBatchCodesService = async (batchId: number) => {
@@ -242,4 +276,26 @@ export const getGiftCodeBatchCodesService = async (batchId: number) => {
     select: { code: true },
   });
   return codes.map((c: { code: string }) => c.code);
+};
+
+export const updateGiftCodeBatchService = async (batchId: number, input: UpdateGiftCodeBatchInput) => {
+  return prisma.activationcodeinfo.update({
+    where: { id: batchId },
+    data: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.channel !== undefined && { channel: input.channel }),
+      ...(input.expiryDate !== undefined && { expiryDate: new Date(input.expiryDate) }),
+      ...(input.bonusesStr !== undefined && { bonusesStr: input.bonusesStr }),
+      ...(input.vipLevel !== undefined && { vipLevel: input.vipLevel }),
+      ...(input.useType !== undefined && { useType: input.useType }),
+    },
+  });
+};
+
+export const deleteGiftCodeBatchService = async (batchId: number) => {
+  await prisma.$transaction([
+    prisma.useactivationcoderecord.deleteMany({ where: { batch: batchId } }),
+    prisma.activationcode.deleteMany({ where: { batch: batchId } }),
+    prisma.activationcodeinfo.delete({ where: { id: batchId } }),
+  ]);
 };

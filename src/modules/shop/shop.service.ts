@@ -132,7 +132,7 @@ export async function buyShopItemService(userId: string, input: BuyShopItemInput
   }
 
   const totalItemQuantity = input.buyQuantity;
-  const order = await prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx: any) => {
     const db = tx as typeof prisma;
     const updated = await (db as any).shopItem.updateMany({
       where: {

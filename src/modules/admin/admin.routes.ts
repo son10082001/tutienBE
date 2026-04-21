@@ -3,23 +3,26 @@ import multer from "multer";
 import fs from "node:fs";
 import path from "node:path";
 import { authenticate, authorize } from "../../middlewares/auth.middleware.js";
+import { getAdminDashboardStatsController } from "./admin.controller.js";
 import {
   createDepositPromotionAdminController,
   listDepositPromotionsAdminController,
   patchDepositPromotionAdminController,
 } from "../deposit/deposit-promotion.controller.js";
 import {
-  createGiftCodeController,
-  getGiftCodeBatchCodesController,
-  getGiftCodeItemsController,
-  listGiftCodeBatchesController,
-} from "../gift-code/gift-code.controller.js";
-import {
   approveDepositController,
   getAllDepositsController,
   rejectDepositController,
   updateDepositAdminController,
 } from "../deposit/deposit.controller.js";
+import {
+  createGiftCodeController,
+  deleteGiftCodeBatchController,
+  getGiftCodeBatchCodesController,
+  getGiftCodeItemsController,
+  listGiftCodeBatchesController,
+  updateGiftCodeBatchController,
+} from "../gift-code/gift-code.controller.js";
 import {
   createShopItemController,
   deleteShopItemController,
@@ -47,6 +50,10 @@ const shopUpload = multer({
 
 adminRouter.get("/dashboard", authenticate, authorize("ADMIN"), (req, res) => {
   return res.status(200).json({ message: "Chào mừng đến bảng quản trị", user: req.user });
+});
+
+adminRouter.get("/dashboard/stats", authenticate, authorize("ADMIN"), (req, res, next) => {
+  getAdminDashboardStatsController(req, res).catch(next);
 });
 
 // ─── Quản lý người dùng ───────────────────────────────────────────────────────
@@ -139,6 +146,14 @@ adminRouter.get("/gift-codes", authenticate, authorize("ADMIN"), (req, res, next
 
 adminRouter.get("/gift-codes/:id/codes", authenticate, authorize("ADMIN"), (req, res, next) => {
   getGiftCodeBatchCodesController(req, res).catch(next);
+});
+
+adminRouter.patch("/gift-codes/:id", authenticate, authorize("ADMIN"), (req, res, next) => {
+  updateGiftCodeBatchController(req, res).catch(next);
+});
+
+adminRouter.delete("/gift-codes/:id", authenticate, authorize("ADMIN"), (req, res, next) => {
+  deleteGiftCodeBatchController(req, res).catch(next);
 });
 
 export { adminRouter };

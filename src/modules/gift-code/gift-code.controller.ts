@@ -1,10 +1,18 @@
-import { createGiftCodeSchema, redeemGiftCodeSchema } from "./gift-code.schema.js";
+import type { Request, Response } from "express";
+import {
+  createGiftCodeSchema,
+  listGiftCodeBatchesQuerySchema,
+  redeemGiftCodeSchema,
+  updateGiftCodeBatchSchema,
+} from "./gift-code.schema.js";
 import {
   createGiftCodesService,
+  deleteGiftCodeBatchService,
   getGiftCodeBatchCodesService,
   getGiftCodeItemsService,
   listGiftCodeBatchesService,
   redeemGiftCodeService,
+  updateGiftCodeBatchService,
 } from "./gift-code.service.js";
 
 export async function createGiftCodeController(req: Request, res: Response): Promise<void> {
@@ -54,7 +62,12 @@ export async function getGiftCodeItemsController(req: Request, res: Response): P
 
 export async function listGiftCodeBatchesController(req: Request, res: Response): Promise<void> {
   try {
-    const batches = await listGiftCodeBatchesService();
+    const parsed = listGiftCodeBatchesQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ message: "Query không hợp lệ", errors: parsed.error.flatten() });
+      return;
+    }
+    const batches = await listGiftCodeBatchesService(parsed.data);
     res.status(200).json(batches);
   } catch (error: any) {
     res.status(500).json({ message: "Lỗi khi lấy danh sách đợt Gift Code" });
@@ -68,5 +81,40 @@ export async function getGiftCodeBatchCodesController(req: Request, res: Respons
     res.status(200).json(codes);
   } catch (error: any) {
     res.status(500).json({ message: "Lỗi khi lấy danh sách mã Gift Code" });
+  }
+}
+
+export async function updateGiftCodeBatchController(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+  const batchId = Number(id);
+  if (!Number.isFinite(batchId) || batchId <= 0) {
+    res.status(400).json({ message: "ID đợt không hợp lệ" });
+    return;
+  }
+  const parsed = updateGiftCodeBatchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Dữ liệu không hợp lệ", errors: parsed.error.flatten() });
+    return;
+  }
+  try {
+    const updated = await updateGiftCodeBatchService(batchId, parsed.data);
+    res.status(200).json(updated);
+  } catch (error: any) {
+    res.status(400).json({ message: error?.message || "Lỗi khi cập nhật đợt Gift Code" });
+  }
+}
+
+export async function deleteGiftCodeBatchController(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+  const batchId = Number(id);
+  if (!Number.isFinite(batchId) || batchId <= 0) {
+    res.status(400).json({ message: "ID đợt không hợp lệ" });
+    return;
+  }
+  try {
+    await deleteGiftCodeBatchService(batchId);
+    res.status(200).json({ message: "Đã xóa đợt Gift Code" });
+  } catch (error: any) {
+    res.status(400).json({ message: error?.message || "Lỗi khi xóa đợt Gift Code" });
   }
 }

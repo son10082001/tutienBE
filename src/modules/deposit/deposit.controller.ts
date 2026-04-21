@@ -1,13 +1,13 @@
 import type { Request, Response } from "express";
 import { createDepositSchema, updateDepositAdminSchema } from "./deposit.schema.js";
 import {
-  approveDeposit,
-  createDepositRequest,
-  getAllDeposits,
-  getDepositById,
-  getMyDeposits,
-  rejectDeposit,
-  updateDepositAdmin,
+    approveDeposit,
+    createDepositRequest,
+    getAllDeposits,
+    getDepositById,
+    getMyDeposits,
+    rejectDeposit,
+    updateDepositAdmin,
 } from "./deposit.service.js";
 
 // ─── User controllers ──────────────────────────────────────────────────────────

@@ -8,7 +8,7 @@ import {
 
 const shopRouter = Router();
 
-shopRouter.get("/items", authenticate, (req, res, next) => {
+shopRouter.get("/items", (req, res, next) => {
   listShopItemsUserController(req, res).catch(next);
 });
 
