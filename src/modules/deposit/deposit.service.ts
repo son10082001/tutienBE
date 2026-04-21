@@ -2,8 +2,13 @@ import { prisma } from "../../lib/prisma.js";
 import type { CreateDepositInput, UpdateDepositAdminInput } from "./deposit.schema.js";
 import { computeDepositBonus, getBestActivePromotion } from "./deposit-promotion.service.js";
 
-/** Nội dung chuyển khoản / mã giao dịch: `NGUTIENKY+` + id yêu cầu (uuid). */
-export const DEPOSIT_TRANSFER_NOTE_PREFIX = "NGUTIENKY+";
+/** Mã giao dịch cố định dạng: `NT` + 6 chữ số. */
+export const DEPOSIT_TRANSFER_NOTE_PREFIX = "NT";
+
+function toTransferNoteFromId(id: string): string {
+  const digits = id.replace(/\D/g, "").slice(0, 6).padEnd(6, "0");
+  return `${DEPOSIT_TRANSFER_NOTE_PREFIX}${digits}`;
+}
 
 export async function createDepositRequest(userId: string, input: CreateDepositInput) {
   const promo = await getBestActivePromotion();
@@ -24,7 +29,7 @@ export async function createDepositRequest(userId: string, input: CreateDepositI
         status: "pending",
       },
     });
-    const note = `${DEPOSIT_TRANSFER_NOTE_PREFIX}${row.id}`;
+    const note = toTransferNoteFromId(row.id);
     return tx.depositRequest.update({
       where: { id: row.id },
       data: { note },

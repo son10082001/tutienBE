@@ -170,6 +170,25 @@ model useactivationcoderecord {
   @@map("useactivationcoderecord")
 }
 
+model NewsPost {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  title       String   @db.VarChar(255)
+  slug        String   @unique @db.VarChar(255)
+  excerpt     String   @db.VarChar(512)
+  content     String   @db.LongText
+  coverImage  String?  @map("cover_image") @db.VarChar(512)
+  isFeatured  Boolean  @default(false) @map("is_featured")
+  isPublished Boolean  @default(false) @map("is_published")
+  publishedAt DateTime? @map("published_at")
+  createdBy   String   @map("created_by") @db.Char(128)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, publishedAt], map: "ind_news_published")
+  @@index([isFeatured], map: "ind_news_featured")
+  @@map("news_post")
+}
+
 model announcement {
   platform     Int      @id
   announcement String   @db.LongText
