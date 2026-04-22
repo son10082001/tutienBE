@@ -32,7 +32,9 @@ export async function loginService(input: LoginInput) {
   const user = await prisma.user.findUnique({ where: { userId: input.userId } });
 
   if (!user) {
-    throw new Error("Tên đăng nhập hoặc mật khẩu không đúng");
+    throw new Error(
+      "Tài khoản chưa đăng ký trên web. Vui lòng đăng ký tại trang chủ trước khi vào game.",
+    );
   }
 
   const isPasswordMatched = user.password === input.password;
