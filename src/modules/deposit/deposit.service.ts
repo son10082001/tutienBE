@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma.js";
 import type { CreateDepositInput, UpdateDepositAdminInput } from "./deposit.schema.js";
 import { computeDepositBonus, getBestActivePromotion } from "./deposit-promotion.service.js";
+import { listDepositOptionsService } from "../admin/admin-settings.service.js";
 
 /** Mã giao dịch cố định dạng: `NT` + 6 chữ số. */
 export const DEPOSIT_TRANSFER_NOTE_PREFIX = "NT";
@@ -11,6 +12,14 @@ function toTransferNoteFromId(id: string): string {
 }
 
 export async function createDepositRequest(userId: string, input: CreateDepositInput) {
+  const method = await prisma.paymentMethodSetting.findFirst({
+    where: { code: input.method, isActive: true },
+  });
+  if (!method) {
+    throw new Error("Phương thức thanh toán không tồn tại hoặc đã bị tắt");
+  }
+  const resolvedServer = input.server?.trim() ? input.server.trim() : "all";
+
   const promo = await getBestActivePromotion();
   const promoPercentSnapshot = promo?.percent ?? null;
   const bonusAmount =
@@ -23,9 +32,9 @@ export async function createDepositRequest(userId: string, input: CreateDepositI
         amount: input.amount,
         bonusAmount,
         promoPercentSnapshot,
-        method: input.method,
+        method: method.code,
         note: "_",
-        server: input.server,
+        server: resolvedServer,
         status: "pending",
       },
     });
@@ -35,6 +44,10 @@ export async function createDepositRequest(userId: string, input: CreateDepositI
       data: { note },
     });
   });
+}
+
+export async function getDepositOptions() {
+  return listDepositOptionsService();
 }
 
 export async function getMyDeposits(userId: string, page = 1, limit = 20) {

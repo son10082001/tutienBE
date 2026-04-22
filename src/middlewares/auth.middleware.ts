@@ -8,6 +8,8 @@ type AuthUser = {
   id: string;
   role: Role;
   account: string;
+  adminRole?: "SUPERADMIN" | "OPERATOR" | "ADVERTISER";
+  permissions: string[];
 };
 
 declare global {
@@ -45,6 +47,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
         id: payload.sub,
         role: payload.role,
         account: payload.account,
+        adminRole: payload.adminRole,
+        permissions: payload.permissions ?? [],
       };
 
       next();
@@ -64,6 +68,26 @@ export function authorize(...roles: Role[]) {
       return res.status(403).json({ message: "Bạn không có quyền thực hiện thao tác này" });
     }
 
+    return next();
+  };
+}
+
+export function authorizePermission(...permissions: string[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Chưa đăng nhập" });
+    }
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Chỉ admin mới được truy cập" });
+    }
+    if (req.user.adminRole === "SUPERADMIN") {
+      return next();
+    }
+    const userPermissions = req.user.permissions ?? [];
+    const allowed = permissions.some((perm) => userPermissions.includes(perm));
+    if (!allowed) {
+      return res.status(403).json({ message: "Bạn không có quyền truy cập chức năng này" });
+    }
     return next();
   };
 }

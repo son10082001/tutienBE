@@ -189,6 +189,93 @@ model NewsPost {
   @@map("news_post")
 }
 
+model AdminAccess {
+  userId      String   @id @map("user_id") @db.Char(128)
+  role        String   @db.VarChar(32)
+  permissions Json
+  isActive    Boolean  @default(true) @map("is_active")
+  createdBy   String?  @map("created_by") @db.Char(128)
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@index([role], map: "ind_admin_access_role")
+  @@map("admin_access")
+}
+
+model AdminRolePermission {
+  role        String   @id @db.VarChar(32)
+  permissions Json
+  updatedBy   String?  @map("updated_by") @db.Char(128)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@map("admin_role_permission")
+}
+
+model GameServerSetting {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  code      String   @unique @db.VarChar(32)
+  name      String   @db.VarChar(128)
+  host      String?  @db.VarChar(255)
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@index([isActive], map: "ind_game_server_setting_active")
+  @@map("game_server_setting")
+}
+
+model PaymentMethodSetting {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  code          String   @unique @db.VarChar(32)
+  name          String   @db.VarChar(128)
+  channel       String   @db.VarChar(32)
+  accountName   String?  @map("account_name") @db.VarChar(128)
+  accountNumber String?  @map("account_number") @db.VarChar(64)
+  phoneNumber   String?  @map("phone_number") @db.VarChar(32)
+  qrTemplate    String?  @map("qr_template") @db.VarChar(1024)
+  banks         Json?
+  isActive      Boolean  @default(true) @map("is_active")
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@index([isActive], map: "ind_payment_method_setting_active")
+  @@map("payment_method_setting")
+}
+
+model SupportTicket {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  userId        String   @map("user_id") @db.Char(128)
+  characterName String?  @map("character_name") @db.VarChar(64)
+  serverName    String?  @map("server_name") @db.VarChar(64)
+  title         String   @db.VarChar(255)
+  content       String   @db.Text
+  status        String   @default("open") @db.VarChar(16)
+  adminReply    String?  @map("admin_reply") @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@index([userId, createdAt], map: "ind_support_ticket_user_created")
+  @@index([status], map: "ind_support_ticket_status")
+  @@map("support_ticket")
+}
+
+model SupportChannel {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  code      String   @unique @db.VarChar(32)
+  name      String   @db.VarChar(128)
+  url       String   @db.VarChar(512)
+  icon      String?  @db.VarChar(64)
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@index([isActive, sortOrder], map: "ind_support_channel_active_sort")
+  @@map("support_channel")
+}
+
 model announcement {
   platform     Int      @id
   announcement String   @db.LongText

@@ -2,10 +2,10 @@ import { z } from "zod";
 
 export const createDepositSchema = z.object({
   amount: z.number().int().min(10000, "Số tiền tối thiểu 10.000đ"),
-  method: z.enum(["vietqr", "momo"], { message: "Phương thức không hợp lệ (chọn VietQR hoặc MoMo)" }),
+  method: z.string().trim().min(1, "Thiếu phương thức thanh toán").max(32, "Mã phương thức quá dài"),
   /** Bỏ qua: server gán nội dung CK cố định `NGUTIENKY+{id}`. */
   note: z.string().max(256).optional(),
-  server: z.string().min(1, "Thiếu thông tin server").max(16, "Mã server quá dài"),
+  server: z.string().trim().min(1, "Thiếu thông tin server").max(32, "Mã server quá dài"),
 });
 
 export const updateDepositAdminSchema = z.object({

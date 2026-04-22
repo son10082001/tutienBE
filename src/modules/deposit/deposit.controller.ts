@@ -4,6 +4,7 @@ import {
     approveDeposit,
     createDepositRequest,
     getAllDeposits,
+    getDepositOptions,
     getDepositById,
     getMyDeposits,
     rejectDeposit,
@@ -27,6 +28,11 @@ export async function getMyDepositsController(req: Request, res: Response): Prom
   const limit = Number(req.query.limit) || 10;
   const result = await getMyDeposits(req.user!.id, page, limit);
   res.json(result);
+}
+
+export async function getDepositOptionsController(_req: Request, res: Response): Promise<void> {
+  const data = await getDepositOptions();
+  res.json(data);
 }
 
 // ─── Admin controllers ─────────────────────────────────────────────────────────

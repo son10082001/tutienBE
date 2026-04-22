@@ -5,6 +5,8 @@ export type JwtPayload = {
   sub: string;
   role: "ADMIN" | "USER";
   account: string;
+  adminRole?: "SUPERADMIN" | "OPERATOR" | "ADVERTISER";
+  permissions?: string[];
   /** Session id lưu DB (`portal_access_session`); mọi request access phải còn hiệu lực. */
   jti: string;
 };

@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import fs from "node:fs";
 import path from "node:path";
-import { authenticate, authorize } from "../../middlewares/auth.middleware.js";
+import { authenticate, authorize, authorizePermission } from "../../middlewares/auth.middleware.js";
 import {
   createNewsPostController,
   deleteNewsPostController,
@@ -43,7 +43,7 @@ const newsUpload = multer({
   }),
 });
 
-adminNewsRouter.use(authenticate, authorize("ADMIN"));
+adminNewsRouter.use(authenticate, authorize("ADMIN"), authorizePermission("news.manage"));
 adminNewsRouter.post("/upload-image", newsUpload.single("image"), (req, res, next) => {
   uploadNewsImageController(req, res).catch(next);
 });

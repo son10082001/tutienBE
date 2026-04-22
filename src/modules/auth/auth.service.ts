@@ -13,6 +13,7 @@ import {
   getAvailableBalance,
   getTicketBalance,
 } from "../ticket-exchange/ticket-exchange.service.js";
+import { getOrCreateAdminAccess } from "../admin/admin-access.service.js";
 
 function resolveRoleByType(type: number): "ADMIN" | "USER" {
   return type === 1 ? "ADMIN" : "USER";
@@ -41,6 +42,7 @@ export async function loginService(input: LoginInput) {
   }
 
   const role = resolveRoleByType(user.type);
+  const adminAccess = role === "ADMIN" ? await getOrCreateAdminAccess(user.userId) : null;
 
   await revokeAllPortalAccessSessionsForUser(user.userId);
   const jti = newPortalJti();
@@ -50,6 +52,8 @@ export async function loginService(input: LoginInput) {
     sub: user.userId,
     role,
     account: user.userId,
+    adminRole: adminAccess?.role,
+    permissions: adminAccess?.permissions ?? [],
     jti,
   } as const;
 
@@ -67,6 +71,8 @@ export async function loginService(input: LoginInput) {
       name: user.name,
       type: user.type,
       role,
+      adminRole: adminAccess?.role ?? null,
+      permissions: adminAccess?.permissions ?? [],
     },
     accessToken,
     refreshToken,
@@ -82,6 +88,7 @@ export async function refreshAccessTokenService(refreshToken: string) {
   }
 
   const role = resolveRoleByType(user.type);
+  const adminAccess = role === "ADMIN" ? await getOrCreateAdminAccess(user.userId) : null;
 
   await revokeAllPortalAccessSessionsForUser(user.userId);
   const jti = newPortalJti();
@@ -91,6 +98,8 @@ export async function refreshAccessTokenService(refreshToken: string) {
     sub: user.userId,
     role,
     account: user.userId,
+    adminRole: adminAccess?.role,
+    permissions: adminAccess?.permissions ?? [],
     jti,
   });
 }
@@ -118,6 +127,7 @@ export async function meService(userId: string) {
   }
 
   const role = resolveRoleByType(user.type);
+  const adminAccess = role === "ADMIN" ? await getOrCreateAdminAccess(user.userId) : null;
 
   // Tính tổng tiền đã nạp thành công (status = approved)
   const approvedDeposits = await prisma.depositRequest.findMany({
@@ -139,6 +149,8 @@ export async function meService(userId: string) {
     phone: user.phone ?? null,
     type: user.type,
     role,
+    adminRole: adminAccess?.role ?? null,
+    permissions: adminAccess?.permissions ?? [],
     balance,
     ticketBalance,
     vipLevel: vip.vipLevel,
