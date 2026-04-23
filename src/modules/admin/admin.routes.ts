@@ -31,7 +31,12 @@ import {
   updateShopItemController,
   uploadShopImageController,
 } from "../shop/shop.controller.js";
-import { deleteUserAdminController, listUsersAdminController } from "../user/user.controller.js";
+import {
+  adminSendItemMailController,
+  deleteUserAdminController,
+  getUserGameMetaAdminController,
+  listUsersAdminController,
+} from "../user/user.controller.js";
 import {
   createAdminAccountController,
   createGameServerController,
@@ -79,6 +84,27 @@ adminRouter.get(
 adminRouter.get("/users", authenticate, authorize("ADMIN"), authorizePermission("users.view"), (req, res, next) => {
   listUsersAdminController(req, res).catch(next);
 });
+
+adminRouter.get(
+  "/users/:userId/game-meta",
+  authenticate,
+  authorize("ADMIN"),
+  authorizePermission("users.view"),
+  (req, res, next) => {
+    getUserGameMetaAdminController(req, res).catch(next);
+  },
+);
+
+adminRouter.post(
+  "/users/:userId/send-item-mail",
+  authenticate,
+  authorize("ADMIN"),
+  authorizePermission("users.view"),
+  authorizePermission("shop.manage"),
+  (req, res, next) => {
+    adminSendItemMailController(req, res).catch(next);
+  },
+);
 
 adminRouter.delete(
   "/users/:userId",

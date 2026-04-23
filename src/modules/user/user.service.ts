@@ -1,5 +1,7 @@
 import { prisma } from "../../lib/prisma.js";
 import { meService } from "../auth/auth.service.js";
+import { sendItemMailByRoleUid } from "../shop/external-mail-api.js";
+import { listExchangeCharacters, listExchangeServers } from "../ticket-exchange/ticket-exchange.service.js";
 import type { UpdateProfileInput } from "./user.schema.js";
 
 const ADMIN_TYPE = 1;
@@ -56,10 +58,7 @@ export async function listUsersService(page = 1, limit = 10, search?: string) {
   const q = search?.trim();
   const where = q
     ? {
-        OR: [
-          { userId: { contains: q } },
-          { name: { contains: q } },
-        ],
+        userId: { contains: q },
       }
     : {};
 
@@ -71,7 +70,6 @@ export async function listUsersService(page = 1, limit = 10, search?: string) {
       take: limit,
       select: {
         userId: true,
-        name: true,
         type: true,
         createTime: true,
         loginTime: true,
@@ -82,7 +80,6 @@ export async function listUsersService(page = 1, limit = 10, search?: string) {
 
   const items = rows.map((r) => ({
     userId: r.userId,
-    name: r.name,
     type: r.type,
     role: r.type === ADMIN_TYPE ? ("ADMIN" as const) : ("USER" as const),
     createTime: r.createTime,
@@ -90,6 +87,27 @@ export async function listUsersService(page = 1, limit = 10, search?: string) {
   }));
 
   return { items, total, page, limit };
+}
+
+export async function getUserGameMetaForAdminService(targetUserId: string) {
+  const user = await prisma.user.findUnique({ where: { userId: targetUserId }, select: { userId: true } });
+  if (!user) {
+    throw new Error("Không tìm thấy người dùng");
+  }
+  const [servers, characters] = await Promise.all([listExchangeServers(), listExchangeCharacters(targetUserId)]);
+  return { servers, characters };
+}
+
+export async function adminSendItemMailToUserService(
+  targetUserId: string,
+  input: { serverId: number; externalItemId: number; quantity: number },
+) {
+  const character = (await listExchangeCharacters(targetUserId)).find((c) => c.serverId === input.serverId);
+  if (!character) {
+    throw new Error("Tài khoản chưa có nhân vật ở server đã chọn");
+  }
+  await sendItemMailByRoleUid(character.uid, input.externalItemId, input.quantity);
+  return { message: "Đã gửi vật phẩm vào hộp thư trong game" };
 }
 
 export async function deleteUserService(actorUserId: string, targetUserId: string) {

@@ -39,3 +39,11 @@ export const updateProfileSchema = z
   });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+export const adminSendItemMailSchema = z.object({
+  serverId: z.coerce.number().int().positive(),
+  externalItemId: z.coerce.number().int().positive(),
+  quantity: z.coerce.number().int().min(1).max(9999),
+});
+
+export type AdminSendItemMailInput = z.infer<typeof adminSendItemMailSchema>;
