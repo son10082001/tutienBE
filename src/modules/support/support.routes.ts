@@ -16,7 +16,7 @@ import {
 
 const supportRouter = Router();
 
-supportRouter.get("/meta", authenticate, (req, res, next) => {
+supportRouter.get("/meta", (req, res, next) => {
   getSupportMetaController(req, res).catch(next);
 });
 

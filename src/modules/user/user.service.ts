@@ -100,14 +100,16 @@ export async function getUserGameMetaForAdminService(targetUserId: string) {
 
 export async function adminSendItemMailToUserService(
   targetUserId: string,
-  input: { serverId: number; externalItemId: number; quantity: number },
+  input: { serverId: number; items: Array<{ externalItemId: number; quantity: number }> },
 ) {
   const character = (await listExchangeCharacters(targetUserId)).find((c) => c.serverId === input.serverId);
   if (!character) {
     throw new Error("Tài khoản chưa có nhân vật ở server đã chọn");
   }
-  await sendItemMailByRoleUid(character.uid, input.externalItemId, input.quantity);
-  return { message: "Đã gửi vật phẩm vào hộp thư trong game" };
+  for (const item of input.items) {
+    await sendItemMailByRoleUid(character.uid, item.externalItemId, item.quantity);
+  }
+  return { message: `Đã gửi ${input.items.length} vật phẩm vào hộp thư trong game` };
 }
 
 export async function deleteUserService(actorUserId: string, targetUserId: string) {

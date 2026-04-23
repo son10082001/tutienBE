@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 
 const GID = "smoke-gid-" + Date.now();
-const URL = `ws://localhost:4000/ws/session?gid=${GID}`;
+const URL = `wss://localhost:4000/ws/session?gid=${GID}`;
 
 function makeClient(name) {
   const ws = new WebSocket(URL);
