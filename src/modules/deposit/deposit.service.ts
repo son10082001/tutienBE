@@ -22,12 +22,18 @@ function resolveWebhookSecretFromHeader(authHeader?: string, tokenHeader?: strin
 }
 
 function extractTransferNote(payload: Record<string, unknown>): string | null {
+  const nested = payload.data && typeof payload.data === "object" ? (payload.data as Record<string, unknown>) : null;
   const sources = [
     payload.content,
     payload.description,
     payload.code,
     payload.transferContent,
     payload.transactionContent,
+    nested?.content,
+    nested?.description,
+    nested?.code,
+    nested?.transferContent,
+    nested?.transactionContent,
   ];
   for (const source of sources) {
     if (typeof source !== "string") continue;
@@ -38,14 +44,26 @@ function extractTransferNote(payload: Record<string, unknown>): string | null {
 }
 
 function extractTransferAmount(payload: Record<string, unknown>): number | null {
+  const nested = payload.data && typeof payload.data === "object" ? (payload.data as Record<string, unknown>) : null;
   const candidates = [
     payload.transferAmount,
     payload.amount,
     payload.transfer_amount,
     payload.transactionAmount,
+    payload.money,
+    nested?.transferAmount,
+    nested?.amount,
+    nested?.transfer_amount,
+    nested?.transactionAmount,
+    nested?.money,
   ];
   for (const value of candidates) {
-    const num = typeof value === "number" ? value : Number(value);
+    const num =
+      typeof value === "number"
+        ? value
+        : typeof value === "string"
+        ? Number(value.replace(/[^\d.-]/g, ""))
+        : Number(value);
     if (Number.isFinite(num) && num > 0) return Math.floor(num);
   }
   return null;
