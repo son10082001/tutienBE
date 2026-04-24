@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma.js";
 import { env } from "../../config/env.js";
+import { sessionSyncHub } from "../session-sync/session-sync.ws.js";
 import type { CreateDepositInput, UpdateDepositAdminInput } from "./deposit.schema.js";
 import { computeDepositBonus, getBestActivePromotion } from "./deposit-promotion.service.js";
 import { listDepositOptionsService } from "../admin/admin-settings.service.js";
@@ -29,11 +30,13 @@ function extractTransferNote(payload: Record<string, unknown>): string | null {
     payload.code,
     payload.transferContent,
     payload.transactionContent,
+    payload.referenceCode,
     nested?.content,
     nested?.description,
     nested?.code,
     nested?.transferContent,
     nested?.transactionContent,
+    nested?.referenceCode,
   ];
   for (const source of sources) {
     if (typeof source !== "string") continue;
@@ -214,7 +217,7 @@ export async function processSepayWebhook(
   const matched = await prisma.depositRequest.findFirst({
     where: { note, status: "pending", amount },
     orderBy: { createdAt: "desc" },
-    select: { id: true },
+    select: { id: true, userId: true },
   });
   if (!matched) {
     return { ok: true, code: "IGNORED_NOT_FOUND" as const, note, amount };
@@ -226,6 +229,17 @@ export async function processSepayWebhook(
   });
   if (updated.count === 0) {
     return { ok: true, code: "IGNORED_ALREADY_PROCESSED" as const, note, amount, depositId: matched.id };
+  }
+
+  try {
+    sessionSyncHub.notifyDepositStatus(matched.userId, {
+      depositId: matched.id,
+      status: "approved",
+      note,
+      amount,
+    });
+  } catch {
+    // broker lỗi không làm fail webhook
   }
 
   return { ok: true, code: "APPROVED" as const, note, amount, depositId: matched.id };

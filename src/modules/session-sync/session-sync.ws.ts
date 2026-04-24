@@ -65,7 +65,15 @@ type OutboundMsg =
   | { type: "broadcast"; data: BroadcastData | null }
   | { type: "revoked"; at: number; platform?: string }
   | { type: "pong" }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | {
+      type: "deposit_status";
+      userId: string;
+      depositId: string;
+      status: string;
+      note: string;
+      amount: number;
+    };
 
 const HEARTBEAT_INTERVAL_MS = 30000;
 
@@ -326,6 +334,32 @@ export class SessionSyncHub {
       clients += s.clients.size;
     }
     return { gids: this.gidStates.size, clients };
+  }
+
+  /**
+   * Khi nạp tiền auto-duyệt (SePay webhook) — gửi tới mọi client WebSocket
+   * đang `subscribe` đúng `userId` (có thể ở nhiều `gid` / tab).
+   */
+  public notifyDepositStatus(
+    userId: string,
+    data: { depositId: string; status: string; note: string; amount: number }
+  ): void {
+    const uid = String(userId);
+    const msg: OutboundMsg = {
+      type: "deposit_status",
+      userId: uid,
+      depositId: data.depositId,
+      status: data.status,
+      note: data.note,
+      amount: data.amount,
+    };
+    for (const state of this.gidStates.values()) {
+      for (const client of state.clients) {
+        if (client.subscribedUserId === uid) {
+          this.send(client, msg);
+        }
+      }
+    }
   }
 }
 
