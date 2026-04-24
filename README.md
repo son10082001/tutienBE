@@ -46,7 +46,9 @@ npm run dev
 - Endpoint: `POST /api/deposit/sepay/webhook`
 - Header xác thực (khuyến nghị):
   - `Authorization: Bearer <SEPAY_WEBHOOK_SECRET>` hoặc
+  - `Authorization: Apikey <SEPAY_WEBHOOK_SECRET>` (SePay dashboard) hoặc
   - `x-sepay-token: <SEPAY_WEBHOOK_SECRET>`
+- Debug (ghi log ra stdout, token đã che): đặt `SEPAY_WEBHOOK_LOG=1` rồi xem `pm2 logs` / `journalctl`
 - Server sẽ tự động duyệt lệnh nạp nếu:
   - Nội dung giao dịch có mã `NTxxxxxx`
   - Mã này trùng `note` của lệnh nạp đang `pending`

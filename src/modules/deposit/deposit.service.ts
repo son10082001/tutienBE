@@ -43,6 +43,13 @@ function extractTransferNote(payload: Record<string, unknown>): string | null {
   return null;
 }
 
+export function previewSepayPayloadParse(payload: Record<string, unknown>): {
+  note: string | null;
+  amount: number | null;
+} {
+  return { note: extractTransferNote(payload), amount: extractTransferAmount(payload) };
+}
+
 function extractTransferAmount(payload: Record<string, unknown>): number | null {
   const nested = payload.data && typeof payload.data === "object" ? (payload.data as Record<string, unknown>) : null;
   const candidates = [

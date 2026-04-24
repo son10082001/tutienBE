@@ -18,6 +18,11 @@ const envSchema = z.object({
   ADMIN_USER_IDS: z.string().default(""),
   ADMIN_TYPES: z.string().default("1"),
   SEPAY_WEBHOOK_SECRET: z.string().default(""),
+  /** `1`/`true`/`yes`: ghi log stdout khi SePay gọi webhook (payload + kết quả, token đã che). */
+  SEPAY_WEBHOOK_LOG: z
+    .string()
+    .default("0")
+    .transform((s) => ["1", "true", "yes"].includes(s.trim().toLowerCase())),
 });
 
 export const env = envSchema.parse(process.env);

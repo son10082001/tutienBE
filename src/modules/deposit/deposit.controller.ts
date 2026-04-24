@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { env } from "../../config/env.js";
 import { createDepositSchema, updateDepositAdminSchema } from "./deposit.schema.js";
 import {
   approveDeposit,
@@ -7,10 +8,23 @@ import {
   getDepositOptions,
   getDepositById,
   getMyDeposits,
+  previewSepayPayloadParse,
   processSepayWebhook,
   rejectDeposit,
   updateDepositAdmin,
 } from "./deposit.service.js";
+
+function redactAuthStyleHeader(h: string | undefined): string {
+  if (!h || !h.trim()) return "(none)";
+  const t = h.trim();
+  const m = t.match(/^(Apikey|Bearer)\s+(.+)$/i);
+  if (m) {
+    const secret = m[2]!;
+    const tail = secret.length <= 4 ? "****" : `***${secret.slice(-4)}`;
+    return `${m[1]} ${tail}`;
+  }
+  return `*** (len ${t.length})`;
+}
 
 // ─── User controllers ──────────────────────────────────────────────────────────
 
@@ -38,11 +52,34 @@ export async function getDepositOptionsController(_req: Request, res: Response):
 
 export async function sepayWebhookController(req: Request, res: Response): Promise<void> {
   const payload = (req.body ?? {}) as Record<string, unknown>;
-  const result = await processSepayWebhook(
-    payload,
-    req.headers.authorization,
-    typeof req.headers["x-sepay-token"] === "string" ? req.headers["x-sepay-token"] : undefined,
-  );
+  const xTokenHeader =
+    typeof req.headers["x-sepay-token"] === "string" ? req.headers["x-sepay-token"] : undefined;
+  const result = await processSepayWebhook(payload, req.headers.authorization, xTokenHeader);
+
+  if (env.SEPAY_WEBHOOK_LOG) {
+    const parse = previewSepayPayloadParse(payload);
+    const forwarded = req.headers["x-forwarded-for"];
+    const ip =
+      typeof forwarded === "string" ? forwarded.split(",")[0]?.trim() : req.socket?.remoteAddress ?? null;
+    const tokenRedacted =
+      xTokenHeader && xTokenHeader.length > 0 ? `***${xTokenHeader.slice(-4)}` : "(none)";
+    console.log(
+      "[SEPAY_WEBHOOK]",
+      JSON.stringify({
+        at: new Date().toISOString(),
+        ip,
+        userAgent: req.headers["user-agent"] ?? null,
+        headers: {
+          authorization: redactAuthStyleHeader(req.headers.authorization),
+          "x-sepay-token": tokenRedacted,
+        },
+        parse,
+        result,
+        body: payload,
+      }),
+    );
+  }
+
   if (!result.ok && result.code === "UNAUTHORIZED") {
     res.status(401).json({ message: "Unauthorized" });
     return;
