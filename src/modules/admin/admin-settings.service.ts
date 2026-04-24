@@ -21,8 +21,9 @@ function normalizeText(v?: string | null): string | null {
 }
 
 const FIXED_PAYMENT_CODES = ["vietqr", "momo"] as const;
+/** SePay QR: https://qr.sepay.vn — `bank` = mã ngân hàng (VD: BIDV, VCB), `des` = nội dung CK (mã NT). */
 const HARDCODED_VIETQR_TEMPLATE =
-  "https://img.vietqr.io/image/{bankCode}-{accountNumber}-compact2.png?amount={amount}&addInfo={note}&accountName={accountName}";
+  "https://qr.sepay.vn/img?acc={accountNumber}&bank={bankCode}&amount={amount}&des={note}&template=compact&download=0";
 const HARDCODED_MOMO_TEMPLATE =
   "https://momosv3.apimienphi.com/api/QRCode?phone={phoneNumber}&amount={amount}&note={note}";
 
@@ -38,7 +39,7 @@ async function ensureFixedPaymentMethods() {
   for (const code of FIXED_PAYMENT_CODES) {
     await prisma.paymentMethodSetting.upsert({
       where: { code },
-      update: {},
+      update: code === "vietqr" ? { qrTemplate: HARDCODED_VIETQR_TEMPLATE } : {},
       create: {
         code,
         name: toPaymentName(code),
