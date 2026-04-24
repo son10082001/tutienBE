@@ -15,6 +15,8 @@ function toTransferNoteFromId(id: string): string {
 function resolveWebhookSecretFromHeader(authHeader?: string, tokenHeader?: string): string | null {
   const bearer = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
   if (bearer && bearer.length > 0) return bearer;
+  const apiKey = authHeader?.match(/^Apikey\s+(.+)$/i)?.[1]?.trim();
+  if (apiKey && apiKey.length > 0) return apiKey;
   const plain = tokenHeader?.trim();
   return plain && plain.length > 0 ? plain : null;
 }
