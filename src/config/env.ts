@@ -17,6 +17,7 @@ const envSchema = z.object({
   TICKET_MAIL_ITEM_ID: z.coerce.number().int().min(1).default(6),
   ADMIN_USER_IDS: z.string().default(""),
   ADMIN_TYPES: z.string().default("1"),
+  SEPAY_WEBHOOK_SECRET: z.string().default(""),
 });
 
 export const env = envSchema.parse(process.env);

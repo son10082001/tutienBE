@@ -26,6 +26,7 @@ Vi du:
 ```env
 ADMIN_USER_IDS="hihihi,son"
 ADMIN_TYPES="1,9"
+SEPAY_WEBHOOK_SECRET="your_sepay_secret"
 ```
 
 Generate Prisma client:
@@ -39,6 +40,22 @@ npm run prisma:generate
 ```bash
 npm run dev
 ```
+
+## 3.1) SePay webhook (xác nhận nạp tự động)
+
+- Endpoint: `POST /api/deposit/sepay/webhook`
+- Header xác thực (khuyến nghị):
+  - `Authorization: Bearer <SEPAY_WEBHOOK_SECRET>` hoặc
+  - `x-sepay-token: <SEPAY_WEBHOOK_SECRET>`
+- Server sẽ tự động duyệt lệnh nạp nếu:
+  - Nội dung giao dịch có mã `NTxxxxxx`
+  - Mã này trùng `note` của lệnh nạp đang `pending`
+  - Số tiền chuyển trùng `amount` của lệnh nạp
+
+Gợi ý cấu hình trong SePay:
+- Webhook URL: `https://your-domain/api/deposit/sepay/webhook`
+- Method: `POST`
+- Header thêm token secret như trên
 
 ## 4) API auth
 

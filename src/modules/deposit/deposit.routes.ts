@@ -4,10 +4,16 @@ import {
   createDepositController,
   getDepositOptionsController,
   getMyDepositsController,
+  sepayWebhookController,
 } from "./deposit.controller.js";
 import { getActiveDepositPromotionController } from "./deposit-promotion.controller.js";
 
 const depositRouter = Router();
+
+// SePay webhook — không authenticate, xác thực bằng secret header.
+depositRouter.post("/sepay/webhook", (req, res, next) => {
+  sepayWebhookController(req, res).catch(next);
+});
 
 // User routes — yêu cầu đăng nhập
 depositRouter.post("/request", authenticate, (req, res, next) => {

@@ -1,14 +1,15 @@
 import type { Request, Response } from "express";
 import { createDepositSchema, updateDepositAdminSchema } from "./deposit.schema.js";
 import {
-    approveDeposit,
-    createDepositRequest,
-    getAllDeposits,
-    getDepositOptions,
-    getDepositById,
-    getMyDeposits,
-    rejectDeposit,
-    updateDepositAdmin,
+  approveDeposit,
+  createDepositRequest,
+  getAllDeposits,
+  getDepositOptions,
+  getDepositById,
+  getMyDeposits,
+  processSepayWebhook,
+  rejectDeposit,
+  updateDepositAdmin,
 } from "./deposit.service.js";
 
 // ─── User controllers ──────────────────────────────────────────────────────────
@@ -33,6 +34,20 @@ export async function getMyDepositsController(req: Request, res: Response): Prom
 export async function getDepositOptionsController(_req: Request, res: Response): Promise<void> {
   const data = await getDepositOptions();
   res.json(data);
+}
+
+export async function sepayWebhookController(req: Request, res: Response): Promise<void> {
+  const payload = (req.body ?? {}) as Record<string, unknown>;
+  const result = await processSepayWebhook(
+    payload,
+    req.headers.authorization,
+    typeof req.headers["x-sepay-token"] === "string" ? req.headers["x-sepay-token"] : undefined,
+  );
+  if (!result.ok && result.code === "UNAUTHORIZED") {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+  res.status(200).json(result);
 }
 
 // ─── Admin controllers ─────────────────────────────────────────────────────────

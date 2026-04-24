@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma.js";
+import { env } from "../../config/env.js";
 import type { CreateDepositInput, UpdateDepositAdminInput } from "./deposit.schema.js";
 import { computeDepositBonus, getBestActivePromotion } from "./deposit-promotion.service.js";
 import { listDepositOptionsService } from "../admin/admin-settings.service.js";
@@ -9,6 +10,43 @@ export const DEPOSIT_TRANSFER_NOTE_PREFIX = "NT";
 function toTransferNoteFromId(id: string): string {
   const digits = id.replace(/\D/g, "").slice(0, 6).padEnd(6, "0");
   return `${DEPOSIT_TRANSFER_NOTE_PREFIX}${digits}`;
+}
+
+function resolveWebhookSecretFromHeader(authHeader?: string, tokenHeader?: string): string | null {
+  const bearer = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
+  if (bearer && bearer.length > 0) return bearer;
+  const plain = tokenHeader?.trim();
+  return plain && plain.length > 0 ? plain : null;
+}
+
+function extractTransferNote(payload: Record<string, unknown>): string | null {
+  const sources = [
+    payload.content,
+    payload.description,
+    payload.code,
+    payload.transferContent,
+    payload.transactionContent,
+  ];
+  for (const source of sources) {
+    if (typeof source !== "string") continue;
+    const matched = source.toUpperCase().match(/NT\d{6}/);
+    if (matched) return matched[0];
+  }
+  return null;
+}
+
+function extractTransferAmount(payload: Record<string, unknown>): number | null {
+  const candidates = [
+    payload.transferAmount,
+    payload.amount,
+    payload.transfer_amount,
+    payload.transactionAmount,
+  ];
+  for (const value of candidates) {
+    const num = typeof value === "number" ? value : Number(value);
+    if (Number.isFinite(num) && num > 0) return Math.floor(num);
+  }
+  return null;
 }
 
 export async function createDepositRequest(userId: string, input: CreateDepositInput) {
@@ -125,4 +163,43 @@ export async function updateDepositAdmin(id: string, input: UpdateDepositAdminIn
       ...(input.adminNote !== undefined && { adminNote: input.adminNote }),
     },
   });
+}
+
+export async function processSepayWebhook(
+  payload: Record<string, unknown>,
+  authHeader?: string,
+  tokenHeader?: string,
+) {
+  const configuredSecret = env.SEPAY_WEBHOOK_SECRET.trim();
+  if (configuredSecret.length > 0) {
+    const receivedSecret = resolveWebhookSecretFromHeader(authHeader, tokenHeader);
+    if (!receivedSecret || receivedSecret !== configuredSecret) {
+      return { ok: false, code: "UNAUTHORIZED" as const };
+    }
+  }
+
+  const note = extractTransferNote(payload);
+  const amount = extractTransferAmount(payload);
+  if (!note || !amount) {
+    return { ok: true, code: "IGNORED_INVALID_PAYLOAD" as const };
+  }
+
+  const matched = await prisma.depositRequest.findFirst({
+    where: { note, status: "pending", amount },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (!matched) {
+    return { ok: true, code: "IGNORED_NOT_FOUND" as const, note, amount };
+  }
+
+  const updated = await prisma.depositRequest.updateMany({
+    where: { id: matched.id, status: "pending" },
+    data: { status: "approved", adminNote: "Auto duyet boi SePay webhook" },
+  });
+  if (updated.count === 0) {
+    return { ok: true, code: "IGNORED_ALREADY_PROCESSED" as const, note, amount, depositId: matched.id };
+  }
+
+  return { ok: true, code: "APPROVED" as const, note, amount, depositId: matched.id };
 }
