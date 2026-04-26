@@ -2,6 +2,7 @@ import { env } from "../../config/env.js";
 import { prismaGame } from "../../lib/prisma-game.js";
 import { prisma } from "../../lib/prisma.js";
 import { getApprovedDepositTotalForUser } from "../deposit/deposit.service.js";
+import { buildMailItemsPayload } from "../shop/external-mail-api.js";
 import type { CreateTicketConversionInput } from "./ticket-exchange.schema.js";
 
 type TicketConversionDelegate = {
@@ -64,7 +65,7 @@ LIMIT 1
 `;
 
 function buildMailItemsString(itemId: number, quantity: number): string {
-  return `4:2:${itemId},${quantity},0,0;`;
+  return buildMailItemsPayload([{ itemId, quantity }]);
 }
 
 async function postJson<T>(url: string, payload: unknown): Promise<T> {

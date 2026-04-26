@@ -134,6 +134,36 @@ model ShopOrder {
   @@map("shop_order")
 }
 
+model CumulativeRechargeMilestone {
+  id              String                    @id @default(uuid()) @db.VarChar(36)
+  thresholdAmount Int                       @map("threshold_amount")
+  title           String?                   @db.VarChar(128)
+  gifts           Json
+  sortOrder       Int                       @default(0) @map("sort_order")
+  isActive        Boolean                   @default(true) @map("is_active")
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+  claims          CumulativeRechargeClaim[]
+
+  @@index([isActive, sortOrder], map: "ind_crm_active_sort")
+  @@map("cumulative_recharge_milestone")
+}
+
+model CumulativeRechargeClaim {
+  id          String                      @id @default(uuid()) @db.VarChar(36)
+  userId      String                      @map("user_id") @db.Char(128)
+  milestoneId String                      @map("milestone_id") @db.VarChar(36)
+  serverId    Int                         @map("server_id")
+  playerUid   String                      @map("player_uid") @db.Char(24)
+  playerName  String                      @map("player_name") @db.VarChar(32)
+  createdAt   DateTime                    @default(now()) @map("created_at")
+  milestone   CumulativeRechargeMilestone @relation(fields: [milestoneId], references: [id])
+
+  @@unique([userId, milestoneId], map: "uniq_crc_user_milestone")
+  @@index([userId], map: "ind_crc_user")
+  @@map("cumulative_recharge_claim")
+}
+
 model activationcode {
   id    String @id @db.Char(12)
   batch Int

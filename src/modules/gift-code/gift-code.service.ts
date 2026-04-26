@@ -1,5 +1,6 @@
 import { env } from "../../config/env.js";
 import { prisma } from "../../lib/prisma.js";
+import { buildMailItemsPayload } from "../shop/external-mail-api.js";
 import type { ListGiftCodeBatchesQueryInput, UpdateGiftCodeBatchInput } from "./gift-code.schema.js";
 
 const T_ACTIVATION_CODE = [
@@ -88,6 +89,41 @@ export interface RedeemGiftCodeParams {
   serverId: number;
 }
 
+function parseGiftCodeBonusesToEntries(bonusesStr: string): { itemId: number; quantity: number }[] {
+  const normalized = bonusesStr.trim().replace(/^4:2:/, "").replace(/;$/, "");
+  if (!normalized) return [];
+
+  const segments = normalized
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const entries: { itemId: number; quantity: number }[] = [];
+  for (const seg of segments) {
+    // Hỗ trợ cả format cũ "2:1:id,qty,0,0" và format mới "id,qty,0,0"/"1,id,qty,0,0"
+    const cleanSeg = seg.replace(/^2:1:/, "").replace(/^4:2:/, "");
+    const parts = cleanSeg.split(",").map((p) => p.trim());
+    if (parts.length < 2) continue;
+
+    let itemId = Number.NaN;
+    let quantity = Number.NaN;
+
+    if (parts[0] === "1") {
+      itemId = Number(parts[1]);
+      quantity = Number(parts[2]);
+    } else {
+      itemId = Number(parts[0]);
+      quantity = Number(parts[1]);
+    }
+
+    if (!Number.isFinite(itemId) || itemId <= 0) continue;
+    if (!Number.isFinite(quantity) || quantity <= 0) continue;
+    entries.push({ itemId, quantity });
+  }
+
+  return entries;
+}
+
 async function postJson<T>(url: string, payload: unknown): Promise<T> {
   const res = await fetch(url, {
     method: "POST",
@@ -173,8 +209,11 @@ export const redeemGiftCodeService = async (params: RedeemGiftCodeParams) => {
     throw new Error(verify.message || "Xác thực nhân vật thất bại");
   }
 
-  // Chuẩn bị chuỗi vật phẩm (chuyển 2:1: thành 4:2:)
-  const items = aci.bonusesStr.replace(/^2:1:/, "4:2:");
+  const entries = parseGiftCodeBonusesToEntries(aci.bonusesStr);
+  if (entries.length === 0) {
+    throw new Error("Gói quà gift code không hợp lệ");
+  }
+  const items = buildMailItemsPayload(entries);
 
   const send = await postJson<{ success: boolean; message?: string }>(sendMailUrl, {
     guid: verify.guid,

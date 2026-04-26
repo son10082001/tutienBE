@@ -38,11 +38,18 @@ async function getJson<T>(url: string): Promise<T> {
   return data as T;
 }
 
-function buildItemsString(itemId: number, quantity: number): string {
-  if (itemId >= 120000) {
-    return `4:2:1,${itemId},${quantity},0,0;`;
+export function buildItemMailSegment(itemId: number, quantity: number): string {
+  if (itemId > 120000) {
+    return `1,${itemId},${quantity},0,0`;
   }
-  return `4:2:${itemId},${quantity},0,0;`;
+  return `${itemId},${quantity},0,0`;
+}
+
+export function buildMailItemsPayload(entries: { itemId: number; quantity: number }[]): string {
+  if (entries.length === 0) return "";
+  const body = entries.map((e) => buildItemMailSegment(e.itemId, e.quantity)).join(";");
+  
+  return `4:2:${body};`;
 }
 
 export async function fetchExternalItems(): Promise<ExternalItem[]> {
@@ -52,7 +59,12 @@ export async function fetchExternalItems(): Promise<ExternalItem[]> {
   return rows ?? [];
 }
 
-export async function sendItemMailByRoleUid(roleUid: string, itemId: number, quantity: number): Promise<void> {
+export async function sendItemBatchMailByRoleUid(
+  roleUid: string,
+  entries: { itemId: number; quantity: number }[],
+): Promise<void> {
+  if (entries.length === 0) return;
+
   const base = env.TICKET_MAIL_API_BASE_URL.replace(/\/$/, "");
   const verifyUrl = `${base}/api/verify`;
   const sendMailUrl = `${base}/api/send-mail`;
@@ -65,7 +77,7 @@ export async function sendItemMailByRoleUid(roleUid: string, itemId: number, qua
     throw new Error(verify.message || "Xác thực nhân vật thất bại");
   }
 
-  const items = buildItemsString(itemId, quantity);
+  const items = buildMailItemsPayload(entries);
   const send = await postJson<SendMailResponse>(sendMailUrl, {
     guid: verify.guid,
     items,
@@ -73,4 +85,8 @@ export async function sendItemMailByRoleUid(roleUid: string, itemId: number, qua
   if (!send.success) {
     throw new Error(send.message || "Gửi mail vật phẩm thất bại");
   }
+}
+
+export async function sendItemMailByRoleUid(roleUid: string, itemId: number, quantity: number): Promise<void> {
+  await sendItemBatchMailByRoleUid(roleUid, [{ itemId, quantity }]);
 }

@@ -24,6 +24,12 @@ import {
   updateGiftCodeBatchController,
 } from "../gift-code/gift-code.controller.js";
 import {
+  createCumulativeRechargeMilestoneController,
+  deleteCumulativeRechargeMilestoneController,
+  listCumulativeRechargeMilestonesAdminController,
+  updateCumulativeRechargeMilestoneController,
+} from "../cumulative-recharge/cumulative-recharge.controller.js";
+import {
   createShopItemController,
   deleteShopItemController,
   listExternalItemsController,
@@ -187,6 +193,48 @@ adminRouter.patch(
   authorizePermission("promotions.manage"),
   (req, res, next) => {
   patchDepositPromotionAdminController(req, res).catch(next);
+  },
+);
+
+// ─── Tích nạp (mốc nạp + quà) ─────────────────────────────────────────────────
+
+adminRouter.get(
+  "/cumulative-recharge/milestones",
+  authenticate,
+  authorize("ADMIN"),
+  authorizePermission("promotions.manage"),
+  (req, res, next) => {
+    listCumulativeRechargeMilestonesAdminController(req, res).catch(next);
+  },
+);
+
+adminRouter.post(
+  "/cumulative-recharge/milestones",
+  authenticate,
+  authorize("ADMIN"),
+  authorizePermission("promotions.manage"),
+  (req, res, next) => {
+    createCumulativeRechargeMilestoneController(req, res).catch(next);
+  },
+);
+
+adminRouter.patch(
+  "/cumulative-recharge/milestones/:id",
+  authenticate,
+  authorize("ADMIN"),
+  authorizePermission("promotions.manage"),
+  (req, res, next) => {
+    updateCumulativeRechargeMilestoneController(req, res).catch(next);
+  },
+);
+
+adminRouter.delete(
+  "/cumulative-recharge/milestones/:id",
+  authenticate,
+  authorize("ADMIN"),
+  authorizePermission("promotions.manage"),
+  (req, res, next) => {
+    deleteCumulativeRechargeMilestoneController(req, res).catch(next);
   },
 );
 

@@ -9,6 +9,7 @@ import { depositRouter } from "./modules/deposit/deposit.routes.js";
 import { adminNewsRouter, newsRouter } from "./modules/news/news.routes.js";
 import { shopRouter } from "./modules/shop/shop.routes.js";
 import { supportRouter } from "./modules/support/support.routes.js";
+import { cumulativeRechargeRouter } from "./modules/cumulative-recharge/cumulative-recharge.routes.js";
 import { ticketExchangeRouter } from "./modules/ticket-exchange/ticket-exchange.routes.js";
 import { userRouter } from "./modules/user/user.routes.js";
 
@@ -28,6 +29,7 @@ app.use("/api/admin", adminRouter);
 app.use("/api/user", userRouter);
 app.use("/api/deposit", depositRouter);
 app.use("/api/ticket-exchange", ticketExchangeRouter);
+app.use("/api/cumulative-recharge", cumulativeRechargeRouter);
 app.use("/api/shop", shopRouter);
 app.use("/api/support", supportRouter);
 app.use("/api/news", newsRouter);
